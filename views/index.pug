@@ -1,0 +1,14 @@
+doctype html
+html(lang='vi')
+  head
+      meta(charset='UTF-8')
+      meta(name="viewport", content="width=device-width, initial-scale=1")
+      script(type="module" src="/js/app.js")
+      link(rel="stylesheet" href="/css/styles.css")
+  body
+    main
+        h1 Quick record
+            .flex
+                textarea#rawReport(cols='50' rows='20' autocapitalize='')
+                .cont
+                    button#scanBtn.dpt-btn Nhập báo cáo

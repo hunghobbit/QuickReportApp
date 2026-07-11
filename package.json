@@ -1,0 +1,38 @@
+{
+  "name": "dta-quick-report-apis",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.0",
+  "description": "API for Quick report app",
+  "main": "app.js",
+  "author": "hunghobbit",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "exceljs": "^3.4.0",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "pug": "^3.0.4"
+  },
+  "overrides": {
+    "exceljs": {
+      "tmp": "^0.2.5",
+      "fast-csv": "^4.3.6",
+      "uuid": "^11.1.1"
+    }
+  },
+  "devDependencies": {
+    "morgan": "^1.11.0",
+    "nodemon": "^3.1.14"
+  },
+  "nodemonConfig": {
+    "watch": ["."],
+    "ignore": ["node_modules", ".git"],
+    "delay": 1000
+  }
+}
