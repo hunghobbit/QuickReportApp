@@ -1,25 +1,8 @@
 import { LABELS } from "./config.js";
 import { buildTempRecordFromSupplementaryValues } from "./utils.js";
+import { RECORD_SCHEMA, normalizeRecordInput } from "../../../configs/record-schema.js";
 
-const FORM_FIELDS = [
-  "stt",
-  "hoTen",
-  "thuocCtyDonVi",
-  "xuongGiao",
-  "xuongNhan",
-  "soThe",
-  "id",
-  "loaiPhuongTien",
-  "bks",
-  "bksRomooc",
-  "soCont",
-  "soSeal",
-  "chiTietHangHoa",
-  "soPhieu",
-  "gioVao",
-  "gioRa",
-  "ghiChu",
-];
+const FORM_FIELDS = RECORD_SCHEMA.formFields;
 
 function getPreviewEntries(values = {}) {
   return Object.entries(values).filter(
@@ -77,7 +60,7 @@ export function createModalController({
   function open(values = {}, config = {}) {
     init();
     currentConfig = { ...currentConfig, ...config };
-    currentValues = { ...values };
+    currentValues = normalizeRecordInput(values);
     currentTempRecord = buildTempRecordFromSupplementaryValues(currentValues);
     renderForm(currentValues);
     modalRoot.hidden = false;
@@ -188,7 +171,7 @@ export function createModalController({
       if (value) rawValues[key] = value;
     });
 
-    currentValues = { ...currentValues, ...rawValues };
+    currentValues = normalizeRecordInput({ ...currentValues, ...rawValues });
     currentTempRecord = buildTempRecordFromSupplementaryValues(currentValues);
     renderPreview(currentTempRecord);
   }

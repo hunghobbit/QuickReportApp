@@ -1,25 +1,6 @@
-export const LABELS = {
-  bks: "Biển số xe",
-  soThe: "Số thẻ",
-  stt: "Số thứ tự",
-  gioRa: "Giờ ra",
-  gioVao: "Giờ vào",
-  xuongGiao: "Xưởng Xuất",
-  xuongNhan : "Xưởng Nhập",
-  hoTen: "Họ tên/Tài xế/NMH",
-  thuocCtyDonVi: "Thuộc Cty/Đơn vị",
-  id: "Loại giấy tờ - Số giấy tờ",
-  soPhieu : "Phiếu Giao/Phiếu MHRC",
-  chiTietHangHoa: "Số lượng - Đơn vị - Tên hàng hóa",
-  soCont: "Số Cont",
-  soSeal: "Số Seal",
-  bksRomooc : "BKS Rơ-mooc",
-  loaiPhuongTien: "Phương tiện",
-  hoTen_ThuocCtyDonVi: "Họ tên - Thuộc Cty/Đơn vị",
-  loaiPhuongTien_BSX_BKSRomooc: "Loại phương tiện - BSX/BKS Rơ-mooc",
-  soCont_SoSeal: "Số Cont - Số Seal",
-  ghiChu: "Ghi chú"
-};
+import { RECORD_SCHEMA } from "./record-schema";
+
+export const LABELS = RECORD_SCHEMA.labels;
 
 export const PERSON_FIELDS = {
   stt: "STT\n\nNo.",

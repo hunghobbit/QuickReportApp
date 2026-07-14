@@ -16,8 +16,7 @@
     "cors": "^2.8.6",
     "exceljs": "^3.4.0",
     "express": "^5.2.1",
-    "multer": "^2.2.0",
-    "pug": "^3.0.4"
+    "multer": "^2.2.0"
   },
   "overrides": {
     "exceljs": {
