@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="manifest" href="./manifest.json" />
+    <title>QuickReportApp — Mission</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: #1e1e1e;
+        color: #eaeaea;
+        padding: 10px;
+        font-size: 13px;
+        user-select: none;
+      }
+      h1 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: default;
+      }
+      #count {
+        color: #888;
+        font-weight: normal;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 3px 0;
+        border-bottom: 1px solid #2c2c2c;
+      }
+      li.done span {
+        text-decoration: line-through;
+        color: #666;
+      }
+      li button.del {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      li button.del:hover {
+        color: #e05555;
+      }
+      input[type="checkbox"] {
+        margin-top: 2px;
+      }
+      form {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      input[type="text"] {
+        flex: 1;
+        background: #2a2a2a;
+        border: 1px solid #3a3a3a;
+        border-radius: 4px;
+        color: #eaeaea;
+        padding: 4px 6px;
+        font-size: 12px;
+      }
+      button.add {
+        background: #3b6ea5;
+        border: none;
+        color: white;
+        border-radius: 4px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 QuickReportApp <span id="count"></span></h1>
+    <ul id="list"></ul>
+    <form id="form">
+      <input type="text" id="input" placeholder="Thêm việc cần làm..." />
+      <button class="add" type="submit">+</button>
+    </form>
+
+    <script>
+      const STORAGE_KEY = "quickreportapp-todo-widget";
+
+      const defaultItems = [
+        {
+          id: "1",
+          text: "services/excel-export.js đang rỗng — app.js sẽ crash",
+          done: false,
+        },
+        {
+          id: "2",
+          text: "Sửa import path sai trong clients/src/App.jsx",
+          done: false,
+        },
+        {
+          id: "3",
+          text: "components/report/index.js export sai (ReportChat, ReportFormModal)",
+          done: false,
+        },
+        {
+          id: "4",
+          text: "ReportChat.jsx: checkIsValid import sai module",
+          done: false,
+        },
+        {
+          id: "5",
+          text: "ReportChat.jsx: handleSave không submit gì cả",
+          done: false,
+        },
+      ];
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : defaultItems;
+        } catch {
+          return defaultItems;
+        }
+      }
+
+      function save(items) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      }
+
+      let items = load();
+
+      function render() {
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        items.forEach((item) => {
+          const li = document.createElement("li");
+          if (item.done) li.classList.add("done");
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = item.done;
+          checkbox.onchange = () => {
+            item.done = checkbox.checked;
+            save(items);
+            render();
+          };
+
+          const span = document.createElement("span");
+          span.textContent = item.text;
+
+          const del = document.createElement("button");
+          del.className = "del";
+          del.textContent = "✕";
+          del.onclick = () => {
+            items = items.filter((i) => i.id !== item.id);
+            save(items);
+            render();
+          };
+
+          li.append(checkbox, span, del);
+          list.appendChild(li);
+        });
+
+        const doneCount = items.filter((i) => i.done).length;
+        document.getElementById("count").textContent =
+          `(${doneCount}/${items.length})`;
+      }
+
+      document.getElementById("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("input");
+        const text = input.value.trim();
+        if (!text) return;
+        items.push({ id: Date.now().toString(), text, done: false });
+        save(items);
+        input.value = "";
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

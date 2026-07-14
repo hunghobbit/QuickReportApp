@@ -35,3 +35,24 @@ export function buildTempRecordFromSupplementaryValues(values = {}) {
     ghiChu: normalizedValues.ghiChu ?? '',
   };
 }
+
+
+/**
+ * Truyền vào 1 object và 1 mảng tên thuộc tính (fields) cần kiểm tra.
+ * Trả về mảng các field bị "trống" trong object (theo đúng danh sách trong mảng).
+ *
+ * "Trống" ở đây nghĩa là: undefined, null, hoặc chuỗi rỗng sau khi trim.
+ * (giống cách checkIsValid/requiredPayloadFields trong project của bạn đang dùng)
+ *
+ * @param {Object} obj - object cần kiểm tra
+ * @param {string[]} fields - danh sách tên thuộc tính cần đối chiếu
+ * @returns {string[]} danh sách field còn thiếu/trống
+ */
+export function getEmptyFields(obj = {}, fields = []) {
+  return fields.filter((field) => {
+    const value = obj[field];
+    if (value === undefined || value === null) return true;
+    if (typeof value === "string") return value.trim() === "";
+    return false;
+  });
+}

@@ -4,7 +4,7 @@ import path from "path";
 import cors from "cors";
 import morgan from "morgan";
 import { fileURLToPath } from "url";
-import { buildWorkbookFromRecord } from "./services/excel-export.js";
+import { buildWorkbookFromRecord } from "";
 import { validateRequestPayload } from "./services/record-validation.js";
 
 const __fileName = fileURLToPath(import.meta.url);

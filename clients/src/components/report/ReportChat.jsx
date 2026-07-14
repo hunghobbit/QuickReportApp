@@ -3,17 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/button";
 import { parseReportText } from "_#/modules/parser";
-import {
-  buildTempRecordFromSupplementaryValues,
-  checkIsValid,
-} from "_#/modules/utils";
+import { normalizeRecordInput, RECORD_SCHEMA } from "_#/configs/record-schema";
+import { getEmptyFields } from "@/utils/object";
+
 export const OPEN_REPORT_CHAT_EVENT = "open-report-chat";
 
 export function openReportChat() {
   window.dispatchEvent(new Event(OPEN_REPORT_CHAT_EVENT));
 }
 
-export function ReportChat() {
+export default function ReportChat() {
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const textareaRef = useRef(null);
@@ -43,9 +42,17 @@ export function ReportChat() {
     if (!content) alert("Vui lòng nhập nội dung báo cáo");
 
     const rawFields = parseReportText(content);
-    if (checkIsValid(rawFields)) {
-      var tempRecord = buildTempRecordFromSupplementaryValues(rawFields);
-      
+    const normalizes = normalizeRecordInput(rawFields);
+    const missingFields = getEmptyFields(
+      normalizes,
+      RECORD_SCHEMA.requiredPayloadFields,
+    );
+    if (missingFields.length > 0) {
+      console.log(
+        "Còn thiếu:",
+        missingFields.map((f) => RECORD_SCHEMA.labels[f]),
+      );
+      // ["Số thẻ", "Giờ ra"]
     }
     e.preventDefault();
     setOpen(false);

@@ -1,8 +1,4 @@
-import { DesktopTopNav } from "@/components/desktop-top-nav";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
-import { CreateReportButton } from "@/components/create-report-button";
-import { ReportChat } from "@/components/report-chat";
-import { ReportFormModal } from "@/components/report";
+import * as ReportEls from "@/components/report"
 
 import "./index.css";
 
@@ -15,11 +11,11 @@ const App = () => {
         <div className="hidden md:block">
           <h1 className="text-3xl font-bold tracking-tight">Báo cáo</h1>
           <div className="mt-5">
-            <CreateReportButton />
+            <ReportEls.ReportForm />
           </div>
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <ReportFormModal />
+          <ReportEls.ReportFormModal/>
 
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <h3 className="text-lg font-semibold">Hướng dẫn</h3>

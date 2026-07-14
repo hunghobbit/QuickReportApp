@@ -4,7 +4,7 @@ import { Plus } from "lucide-react"
 import  Button  from "../ui/button"
 import { openReportChat } from "./ReportChat"
 
-export function CreateReportButton() {
+export default function CreateReportButton() {
   return (
     <Button
       size="lg"
