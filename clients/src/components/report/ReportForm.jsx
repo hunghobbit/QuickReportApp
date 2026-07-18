@@ -1,7 +1,7 @@
 import { RECORD_SCHEMA } from "@/config/record-schema";
 import ReportField from "./ReportField";
 
-export default function ReportForm({ form, setForm }) {
+export default function ReportForm({ form, setForm, errors = {}, onFieldChange }) {
   function handleChange(e) {
     const { name, value } = e.target;
 
@@ -10,6 +10,8 @@ export default function ReportForm({ form, setForm }) {
 
       [name]: value,
     }));
+
+    onFieldChange?.(name);
   }
 
   return (
@@ -21,6 +23,7 @@ export default function ReportForm({ form, setForm }) {
           label={RECORD_SCHEMA.labels[name]}
           value={form[name]}
           onChange={handleChange}
+          error={errors[name]}
         />
       ))}
     </div>

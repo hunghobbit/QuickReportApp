@@ -9,7 +9,10 @@ import {
   createInitialRecordForm,
 } from "@/config/record-schema";
 import ReportForm from "./ReportForm";
+import { getReportFormErrors, validateReportForm } from "@/features/report/validator";
+import { useModalFormInitValues } from "@/contexts/ExportContext";
 
+let initValues = null;
 export const OPEN_REPORT_FORM_EVENT = "open-report-form";
 
 export function openReportForm() {
@@ -26,6 +29,10 @@ export default function ReportFormModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [message, setMessage] = useState("");
+
+  const [errors, setErrors] = useState({});
+
+  const { initForm } = useModalFormInitValues();
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);
@@ -47,44 +54,29 @@ export default function ReportFormModal() {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open]);
 
+  useEffect(() => {
+    if(open){{
+      setForm(createInitialRecordForm(initForm));
+      setErrors({})
+      setMessage("")
+    }}
+  },[open, initForm])
   async function handleSubmit(e) {
     e.preventDefault();
 
+    const validation = validateReportForm(form);
+    if (validation.error) {
+      setErrors(getReportFormErrors(form));
+      setMessage("Vui lòng kiểm tra các trường được đánh dấu.");
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage("");
+    setErrors({});
 
     try {
-      const response = await fetch("http://localhost:3000/api/write-record", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(buildRecordPayload(form)),
-      });
-
-      if (!response.ok) {
-        throw new Error("Không thể tạo file Excel");
-      }
-
-      const blob = await response.blob();
-
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-
-      a.href = url;
-
-      a.download = `report_${Date.now()}.xlsx`;
-
-      a.click();
-
-      URL.revokeObjectURL(url);
-
-      setMessage("Xuất Excel thành công.");
-
-      setForm(initialForm);
-
-      setOpen(false);
+      
     } catch (err) {
       setMessage(err.message ?? "Có lỗi xảy ra.");
     } finally {
@@ -128,7 +120,19 @@ export default function ReportFormModal() {
 
         {/* Body */}
         <div className="overflow-y-auto p-5">
-          <ReportForm form={form} setForm={setForm} />
+          <ReportForm
+            form={form}
+            setForm={setForm}
+            errors={errors}
+            onFieldChange={(name) =>
+              setErrors((current) => {
+                if (!current[name]) return current;
+                const next = { ...current };
+                delete next[name];
+                return next;
+              })
+            }
+          />
         </div>
 
         {/* Footer */}
@@ -145,7 +149,7 @@ export default function ReportFormModal() {
             </Button>
 
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Đang xuất..." : "Xuất Excel"}
+              {isSubmitting ? "Đang thêm..." : "Thêm báo cáo"}
             </Button>
           </div>
         </div>

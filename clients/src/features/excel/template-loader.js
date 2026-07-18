@@ -6,13 +6,10 @@ const __fileName = fileURLToPath(import.meta.url);
 const __dirName = path.dirname(__fileName);  
 
 export async function loadTemplate(templateName) {
-  const filePath = path.join(
-    __dirName,
-    "..",
-    "__xlsx",
-    `${templateName}_Template.xlsx`,
-  );
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(filePath);
-  return workbook;
+  // Call API 'template-loader'
+  const response = await fetch(`/api/template-loader?name=${templateName}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load template: ${response.statusText}`);
+  }
+  return await response.json();
 }

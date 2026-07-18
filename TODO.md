@@ -1,155 +1,92 @@
-# TODO
+# Kế hoạch triển khai QuickReportApp
 
-> Reordered after a full codebase review (see PROJECT_CONTEXT.md for details).
-> Section 1 used to say "recently completed" — some of those items are not
-> actually true right now (see Section 0). Fix those before building anything
-> new on top of them.
+Tài liệu này sắp xếp công việc theo phụ thuộc. Không triển khai cloud hay scheduler trước khi luồng lưu/sửa báo cáo hoạt động ổn định.
 
-## 0. Blocking bugs (found during review — do these first)
+## P0 — Chốt nền tảng
 
-These aren't nice-to-haves, they mean core paths currently crash or don't run.
+- [x] Chọn React (`clients/`) là frontend chính.
+- [x] Ngừng bổ sung tính năng mới cho `public/` legacy. (đã xóa)
+- [x] Rà và sửa các import/export React để build ổn định trên môi trường Linux/CI.
+- [x] Gom parser về một implementation duy nhất.
+- [ ] Xóa hoặc hợp nhất các nhãn/alias trùng với `configs/record-schema.js`.
 
-- [ ] `services/excel-export.js` is empty. `app.js` imports
-      `buildWorkbookFromRecord` from it — `/api/write-record` will throw the
-      moment it's hit. The real implementation already exists, just in the
-      wrong place: `clients/src/features/excel/exporter.js` +
-      `template-loader.js`. Move/adapt that logic into `services/`.
-- [ ] `clients/src/App.jsx` imports components from paths that don't match
-      real files (`@/components/desktop-top-nav`, `@/components/mobile-bottom-nav`,
-      `@/components/create-report-button`, `@/components/report-chat`). Fix
-      the import paths to match `components/layout/*` and `components/report/*`.
-- [ ] `clients/src/components/report/index.js` re-exports a default export
-      from `ReportChat.jsx` that doesn't exist (it only has named exports).
-      Also missing an export for `ReportFormModal`, which `App.jsx` needs.
-- [ ] `ReportChat.jsx` imports `checkIsValid` from `_#/modules/utils`, but
-      that module doesn't export it — it lives in `clients/src/utils/helper.js`.
-      Fix the import.
-- [ ] `ReportChat.jsx`'s `handleSave` parses text into `tempRecord` and then
-      discards it — no modal, no submit. Wire it to actually show a review
-      step and call the API (mirror what `public/js/modules/modal.js`
-      already does correctly).
+## P1 — Nghiệp vụ và kiểm tra dữ liệu
 
-## 1. Already working (confirmed during review)
+- [ ] Viết `report-status`: `gioRa` trống là `pending`; `gioRa` hợp lệ là `completed`.
+- [ ] Quy định rõ tập trường bắt buộc khi lưu `pending`.
+- [ ] Quy định rõ tập trường bắt buộc khi lưu `completed`.
+- [ ] Cập nhật validator để hỗ trợ hai chế độ: lưu tạm và hoàn tất.
+- [ ] Viết test cho chuẩn hóa giờ, phân loại trạng thái và validation.
 
-- [x] Legacy vanilla-JS frontend (`public/js/app.js` + `modules/modal.js`)
-      completes the full flow: paste → parse → prefill modal → preview/confirm
-      → POST → download `.xlsx`.
-- [x] `ReportFormModal.jsx` (manual full-form entry in the React app) submits
-      to `/api/write-record` and downloads the result — this path is fine on
-      its own, it's just not fed by the parser/chat flow yet.
-- [x] Shared schema (`configs/record-schema.js`) is used consistently by the
-      backend validator and both frontends for field names, labels, and
-      Excel column mapping.
-- [x] Time/field normalization (`normalizeTime`, compound field resolution)
-      is centralized and reused for both payload building and validation.
+## P2 — Lưu trữ SQLite
 
-## 2. Consolidation (do before adding features, not after)
+- [ ] Chọn thư viện SQLite và cấu hình kết nối `storage/data/quick-report.db`.
+- [ ] Tạo migration/schema bảng `reports`.
+- [ ] Các cột tối thiểu: `id`, `report_date`, dữ liệu nghiệp vụ, `raw_text`, `status`, `created_at`, `updated_at`.
+- [ ] Tạo `sqlite-report-repository` cho tạo, lấy theo ngày, lấy chi tiết và cập nhật báo cáo.
+- [ ] Thêm dữ liệu/migration an toàn cho database đã tồn tại.
 
-- [ ] `parseReportText`/`getFieldValueFromLine` currently exist in three
-      places (`modules/parser.js`, `public/js/modules/parser.js`,
-      `clients/src/features/report/parser.js`) and are already slightly out
-      of sync. Pick one canonical location (likely `modules/parser.js`,
-      imported via the existing `_#/` alias) and delete the other two.
-- [ ] `clients/src/config/aliases.js` duplicates `RECORD_SCHEMA.labels` as a
-      separate `LABELS` object, plus unused `PERSON_FIELDS`/`GOODS_FIELDS`
-      scaffolding for a sheet type that isn't implemented
-      (`template-loader.js` hardcodes `loadTemplate("Goods")`). Either wire up
-      the second sheet type or delete the dead scaffolding.
-- [ ] Decide the fate of `public/`: once `clients/` reaches parity (see
-      Section 0), retire the vanilla-JS frontend rather than maintaining two
-      versions of the same parsing/modal logic in parallel.
+## P3 — Service và API báo cáo
 
-## 3. Harden validation & error handling
+- [ ] Viết `report-service` sử dụng repository và rule trạng thái.
+- [ ] Thay luồng cũ `/api/write-record` bằng API lưu báo cáo.
+- [ ] Tạo API: tạo báo cáo, danh sách theo ngày, chi tiết và cập nhật báo cáo.
+- [ ] API cập nhật phải tự tính lại status sau khi sửa `gioRa`.
+- [ ] Thêm phản hồi lỗi rõ ràng và logging phía server.
 
-- [ ] Validate `req.body.tempRecord` before JSON parsing (partially done in
-      `services/record-validation.js` — extend edge-case coverage).
-- [ ] Add stricter schema checks for required fields and types.
-- [ ] Normalize additional aliases (id/cccd, soCont/soSeal — already partly
-      handled via `RECORD_SCHEMA.aliases`, verify coverage is complete).
-- [ ] Avoid hardcoded `http://localhost:3000` in `public/js/app.js` and
-      `ReportFormModal.jsx` — move to an env-driven API base URL so
-      production builds don't silently point at localhost.
+## P4 — Luồng React tạo/lưu báo cáo
 
-## 4. File I/O and error handling (backend)
+- [ ] Thêm `ReportDatePicker` và state ngày báo cáo hiện hành.
+- [ ] Gắn `reportDate` vào dữ liệu khi quét và lưu.
+- [ ] Đổi nội dung `ReportFormModal` từ “Xuất Excel” thành “Thêm/Lưu báo cáo”.
+- [ ] Modal quét giữ giá trị đã parse và mở form đã điền sẵn.
+- [ ] Gọi API lưu báo cáo; hiển thị lỗi/thành công cho người dùng.
 
-- [ ] Avoid relying on a fixed temp path if possible.
-- [ ] Clean up temp files on error or if the download is interrupted.
-- [ ] Add clearer logging for export failures (currently just
-      `console.error` + generic 500 in `app.js`).
+## P5 — Tabs, card và chỉnh sửa
 
-## 5. Frontend UX
+- [ ] Tạo `ReportTabs` cho **Đã ra xưởng** và **Chưa ra xưởng**.
+- [ ] Tạo `ReportCard` không dùng ảnh; hiển thị thông tin nhận diện, giờ vào/ra và cảnh báo thiếu dữ liệu.
+- [ ] Tải danh sách theo ngày đã chọn và theo status.
+- [ ] Trên card `pending`, hiện nút **Chỉnh sửa** khi hover/focus.
+- [ ] Chỉnh sửa mở lại modal với dữ liệu cũ.
+- [ ] Lưu với giờ ra hợp lệ thì card tự chuyển sang tab hoàn tất.
 
-- [ ] Show success/failure feedback after submit (partially present in
-      `ReportFormModal` via `message` state; not present at all in
-      `ReportChat`, which currently has no feedback since it doesn't submit).
-- [ ] Support entering multiple records in one session before exporting.
+## P6 — Xuất Excel thủ công
 
-## 6. Photo upload (not started)
+- [ ] Hoàn thiện `services/excel-export.js` để xuất toàn bộ báo cáo của một ngày từ database.
+- [ ] Xác nhận cách bố trí: một sheet hay hai sheet theo status.
+- [ ] Tạo API xuất Excel theo ngày đang chọn.
+- [ ] Đặt tên chuẩn `Báo cáo ddMMyyyyHHmmss.xlsx`.
+- [ ] Chỉ đặt nút **Xuất Excel** ở màn hình danh sách, không đặt trong modal form.
+- [ ] Kiểm tra template, format, merge cells, border và dữ liệu thiếu.
 
-- [ ] `multer` is already a dependency but has no endpoint wired into
-      `app.js` — no upload route exists yet.
-- [ ] `clients/src/features/image/{compressor,uploader,index}.js` are empty
-      stubs. Decide: client-side compression before upload, or raw upload +
-      server-side processing.
-- [ ] Design how photos (vehicle, ID card, seal) attach to a record —
-      inline in the same request as `write-record`, or a separate upload
-      endpoint referenced by record ID.
+## P7 — Lịch sử và chống xuất trùng
 
-## 7. Mid-term: persistence layer
+- [ ] Tạo bảng `export_runs`.
+- [ ] Lưu: ngày báo cáo, loại xuất (`manual`/`automatic`), thời điểm, tên file, trạng thái, lỗi và URL/đường dẫn file.
+- [ ] Trước khi xuất tự động, kiểm tra đã có lượt xuất tự động thành công cho ngày đó chưa.
+- [ ] Có cơ chế xuất bù nếu máy/service không hoạt động đúng 00:00.
 
-- [ ] Add SQLite for record storage.
-- [ ] Create a `records` table matching the current field model in
-      `configs/record-schema.js`.
-- [ ] Persist each record to DB instead of only writing directly to Excel.
-- [ ] Split into two endpoints: one to save a record, one to generate a
-      workbook from saved records.
+## P8 — Chuyển cloud: Supabase + Render
 
-## 8. Client-side storage (scaffolded, not implemented)
+- [ ] Tạo Supabase project và PostgreSQL schema tương ứng.
+- [ ] Viết `supabase-report-repository` cùng interface với SQLite repository.
+- [ ] Tạo Supabase Storage bucket `report-exports`.
+- [ ] Đưa backend lên Render.
+- [ ] Tạo Render Cron Job lúc `00:00` theo `Asia/Ho_Chi_Minh`.
+- [ ] Job tạo Excel, tải file lên Supabase Storage và ghi `export_runs`.
+- [ ] Dùng biến môi trường cho URL/key; tuyệt đối không commit secret.
 
-- [ ] `clients/src/features/storage/{local-storage,indexed-db,index}.js` and
-      `clients/src/hooks/useLocalStorage.js` are all empty. Needed for
-      draft-saving / offline support before this is worth advertising as a
-      feature.
+## P9 — Chất lượng và vận hành
 
-## 9. PWA / mobile readiness
+- [ ] Test parser, API tạo/sửa, chuyển trạng thái, export và chống trùng.
+- [ ] Test tích hợp từ quét văn bản đến hiển thị đúng tab.
+- [ ] Thêm logging có cấu trúc cho lỗi lưu/export/scheduler.
+- [ ] Thêm backup, cảnh báo lỗi job và hướng dẫn phục hồi.
+- [ ] Viết README tiếng Việt: chạy local, biến môi trường, migration, deploy và quy trình xử lý lỗi.
 
-- [ ] `clients/public/service-workers.js` is currently just a comment
-      (`// load a watcher`) — no actual service worker registered anywhere.
-- [ ] `manifest.json` already exists and looks correct; verify it's actually
-      linked from `index.html` (currently it is not referenced there).
-- [ ] Basic offline support once the storage layer (Section 8) exists.
+## Chưa thuộc phạm vi hiện tại
 
-## 10. Advanced record management
-
-- [ ] View/edit/delete existing records (depends on Section 7 persistence
-      layer existing first).
-- [ ] Filter by date, shift, company.
-
-## 11. Excel template quality
-
-- [ ] Confirm formatting, borders, and merged cells survive repeated writes
-      (current `addBorder` logic in `features/excel/exporter.js` only
-      touches the newly written row — verify this matches the template's
-      existing style).
-- [ ] Add a timestamped filename on export (currently hardcoded to
-      `quick-report.xlsx` in `app.js`, and `report_${Date.now()}.xlsx` in
-      `ReportFormModal.jsx` — pick one convention and make it consistent
-      across both frontends).
-
-## 12. Test coverage
-
-- [ ] Unit tests for `configs/record-schema.js` (normalization, compound
-      fields, validators) — this is the highest-value place to start since
-      both frontends and the backend depend on it.
-- [ ] Unit tests for `parseReportText`/`getFieldValueFromLine` once
-      consolidated into one module (Section 2).
-- [ ] Integration test for `/api/write-record` once
-      `services/excel-export.js` is actually implemented.
-
-## 13. Project housekeeping
-
-- [ ] Add a README describing setup (`clients/` runs on Vite port 3001,
-      backend on Express port 3000, two separate `npm install`s currently
-      needed) and which frontend is authoritative.
-- [ ] Add linting/formatting config — none currently present.
-- [ ] Add an `npm test` script (currently just `echo "Error: no test specified"`).
+- [ ] Ảnh xe/CCCD/seal và Multer: giữ lại cho phase sau khi luồng báo cáo chính ổn định.
+- [ ] PWA/offline draft: chỉ làm sau khi persistence và sync đã rõ ràng.
+- [ ] Xác thực/phân quyền: thực hiện trước khi mở cho nhiều người dùng ngoài phạm vi nội bộ.

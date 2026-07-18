@@ -1,9 +1,13 @@
 import * as ReportEls from "@/components/report"
 
 import "./index.css";
+import { DesktopTopNav } from "./components/layout/DesktopTopNav";
+import { MobileBottomNav } from "./components/layout/MobileBottomNav";
+import { ModalFormInitValuesProvider } from "./contexts/ExportContext";
 
 const App = () => {
   return (
+    <ModalFormInitValuesProvider>
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <DesktopTopNav />
 
@@ -11,11 +15,11 @@ const App = () => {
         <div className="hidden md:block">
           <h1 className="text-3xl font-bold tracking-tight">Báo cáo</h1>
           <div className="mt-5">
-            <ReportEls.ReportForm />
+            <ReportEls.CreateReportButton />
           </div>
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <ReportEls.ReportFormModal/>
+          <ReportEls.ReportFormModal />
 
           <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
             <h3 className="text-lg font-semibold">Hướng dẫn</h3>
@@ -29,8 +33,9 @@ const App = () => {
       </main>
 
       <MobileBottomNav />
-      <ReportChat />
+      <ReportEls.ReportChat />
     </div>
+    </ModalFormInitValuesProvider>
   );
 };
 export default App;

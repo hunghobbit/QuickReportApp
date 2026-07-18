@@ -1,3 +1,4 @@
+import { createInitialRecordForm } from "_#/configs/record-schema.js";
 import { FIELD_ALIASES } from "./config.js";
 
 export function getFieldValueFromLine(line, aliases = []) {
@@ -16,25 +17,7 @@ export function getFieldValueFromLine(line, aliases = []) {
 
 export function parseReportText(reportText) {
   const lines = reportText.split("\n");
-  const rawFields = {
-    stt: "",
-    hoTen: "",
-    thuocCtyDonVi :"",
-    xuongGiao: "",
-    xuongNhan: "",
-    soThe: "",
-    id: "",
-    loaiPhuongTien:"",
-    bks: "",
-    bksRomooc:"",
-    soCont:"",
-    soSeal:"",
-    chiTietHangHoa: "",
-    soPhieu: "",
-    gioVao: "",
-    gioRa: "",
-    ghiChu: "",
-  };
+  const rawFields = createInitialRecordForm();
 
   lines.forEach((line) => {
     const hoTenValue = getFieldValueFromLine(line, FIELD_ALIASES.hoTen);

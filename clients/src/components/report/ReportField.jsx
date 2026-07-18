@@ -5,6 +5,7 @@ export default function ReportField({
   label,
   value,
   onChange,
+  error,
 }) {
   const isTextarea = textareaFields.includes(name);
 
@@ -12,7 +13,8 @@ export default function ReportField({
     return (
       <label>
         <span>{label}</span>
-        <textarea name={name} value={value} onChange={onChange} />
+        <textarea name={name} value={value} onChange={onChange} aria-invalid={Boolean(error)} />
+        {error && <span className="text-sm text-red-600">{error}</span>}
       </label>
     );
   }
@@ -20,7 +22,8 @@ export default function ReportField({
   return (
     <label>
       <span>{label}</span>
-      <input name={name} value={value} onChange={onChange} />
+      <input name={name} value={value} onChange={onChange} aria-invalid={Boolean(error)} />
+      {error && <span className="text-sm text-red-600">{error}</span>}
     </label>
   );
 }

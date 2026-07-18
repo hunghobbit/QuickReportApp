@@ -256,9 +256,12 @@ export function normalizeRecordInput(values = {}) {
   return normalized;
 }
 
-export function createInitialRecordForm() {
+export function createInitialRecordForm(initValues = {}) {
   return Object.fromEntries(
-    RECORD_SCHEMA.formFields.map((fieldName) => [fieldName, ""]),
+    RECORD_SCHEMA.formFields.map((fieldName) => [
+      fieldName,
+      initValues[fieldName] ?? ("" || 0),
+    ]),
   );
 }
 

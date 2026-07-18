@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/button";
 import { parseReportText } from "_#/modules/parser";
 import { normalizeRecordInput, RECORD_SCHEMA } from "_#/configs/record-schema";
-import { getEmptyFields } from "@/utils/object";
+import { useModalFormInitValues } from "@/contexts/ExportContext";
+import { openReportForm } from "./ReportFormModal";
 
 export const OPEN_REPORT_CHAT_EVENT = "open-report-chat";
 
@@ -16,6 +17,7 @@ export default function ReportChat() {
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const textareaRef = useRef(null);
+  const { setInitForm } = useModalFormInitValues();
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);
@@ -39,24 +41,18 @@ export default function ReportChat() {
   }, [open]);
 
   function handleSave(e) {
-    if (!content) alert("Vui lòng nhập nội dung báo cáo");
-
-    const rawFields = parseReportText(content);
-    const normalizes = normalizeRecordInput(rawFields);
-    const missingFields = getEmptyFields(
-      normalizes,
-      RECORD_SCHEMA.requiredPayloadFields,
-    );
-    if (missingFields.length > 0) {
-      console.log(
-        "Còn thiếu:",
-        missingFields.map((f) => RECORD_SCHEMA.labels[f]),
-      );
+    if (!content) {
+      alert("Vui lòng nhập nội dung báo cáo");
+    } else {
+      const rawFields = parseReportText(content);
+      const normalizes = normalizeRecordInput(rawFields);
+      setInitForm(normalizes);
+      openReportForm();
       // ["Số thẻ", "Giờ ra"]
+      e.preventDefault();
+      setOpen(false);
+      setContent("");
     }
-    e.preventDefault();
-    setOpen(false);
-    setContent("");
   }
 
   if (!open) return null;
