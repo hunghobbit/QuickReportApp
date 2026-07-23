@@ -5,7 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { db } from "./db.js";
+import { dbAll, dbExec, saveDatabase } from "./db.js";
 
 const __fileName = fileURLToPath(import.meta.url);
 const __dirName = path.dirname(__fileName);
@@ -16,12 +16,9 @@ const MIGRATIONS_DIR = path.join(__dirName, "migrations");
  * Returns a Set of lowercase column names.
  */
 function getTableColumns(tableName) {
-  return new Promise((resolve, reject) => {
-    db.all(`PRAGMA table_info(${tableName})`, (err, rows) => {
-      if (err) return reject(err);
-      resolve(new Set(rows.map((r) => r.name.toLowerCase())));
-    });
-  });
+  return dbAll(`PRAGMA table_info(${tableName})`).then((rows) =>
+    new Set(rows.map((r) => r.name.toLowerCase()))
+  );
 }
 
 /**
@@ -53,12 +50,7 @@ async function runMigration(filePath) {
       }
     }
 
-    await new Promise((resolve, reject) => {
-      db.exec(stmt, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+    await dbExec(stmt);
   }
 }
 
@@ -96,6 +88,10 @@ async function main() {
   }
 
   console.log("🎉 Tất cả migration đã được áp dụng.");
+  
+  // Save database after migrations
+  saveDatabase();
+  console.log("💾 Database đã được lưu.");
 }
 
 main()
@@ -104,5 +100,7 @@ main()
     process.exit(1);
   })
   .finally(() => {
-    db.close();
+    // sql.js: save database before exit
+    saveDatabase();
+    console.log("💾 Database đã được lưu.");
   });

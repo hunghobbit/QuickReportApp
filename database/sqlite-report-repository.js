@@ -2,7 +2,7 @@
 // Repository pattern cho bảng reports.
 // Interface được thiết kế để dễ dàng thay thế bằng supabase-report-repository
 // ở giai đoạn 2 mà không thay đổi service layer.
-import { db } from "./db.js";
+import { dbRun, dbGet, dbAll } from "./db.js";
 import { getReportStatus, REPORT_STATUS } from "../services/report-status.js";
 
 // Các cột trong bảng reports (trùng khớp với migration 001)
@@ -111,15 +111,13 @@ export function createReport(report) {
     const values = reportToValues(report);
     const sql = `INSERT INTO reports (${INSERT_COLUMNS.join(", ")}) VALUES (${INSERT_PLACEHOLDERS})`;
 
-    db.run(sql, values, function (err) {
-      if (err) return reject(err);
-
-      // Lấy bản ghi vừa tạo
-      db.get("SELECT * FROM reports WHERE id = ?", [this.lastID], (err, row) => {
-        if (err) return reject(err);
-        resolve(mapRowToReport(row));
-      });
-    });
+    dbRun(sql, values)
+      .then((result) => {
+        // Lấy bản ghi vừa tạo
+        return dbGet("SELECT * FROM reports WHERE id = ?", [result.lastInsertRowid]);
+      })
+      .then((row) => resolve(mapRowToReport(row)))
+      .catch(reject);
   });
 }
 
@@ -131,10 +129,9 @@ export function createReport(report) {
 export function getReportsByDate(reportDate) {
   return new Promise((resolve, reject) => {
     const sql = "SELECT * FROM reports WHERE report_date = ? ORDER BY id ASC";
-    db.all(sql, [reportDate], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows.map(mapRowToReport));
-    });
+    dbAll(sql, [reportDate])
+      .then((rows) => resolve(rows.map(mapRowToReport)))
+      .catch(reject);
   });
 }
 
@@ -145,10 +142,9 @@ export function getReportsByDate(reportDate) {
  */
 export function getReportById(id) {
   return new Promise((resolve, reject) => {
-    db.get("SELECT * FROM reports WHERE id = ?", [id], (err, row) => {
-      if (err) return reject(err);
-      resolve(mapRowToReport(row));
-    });
+    dbGet("SELECT * FROM reports WHERE id = ?", [id])
+      .then((row) => resolve(mapRowToReport(row)))
+      .catch(reject);
   });
 }
 
@@ -162,69 +158,65 @@ export function getReportById(id) {
 export function updateReport(id, updates) {
   return new Promise((resolve, reject) => {
     // Lấy bản ghi hiện tại để merge
-    db.get("SELECT * FROM reports WHERE id = ?", [id], (err, existing) => {
-      if (err) return reject(err);
-      if (!existing) return resolve(null);
+    dbGet("SELECT * FROM reports WHERE id = ?", [id])
+      .then((existing) => {
+        if (!existing) return resolve(null);
 
-      const merged = {
-        ...mapRowToReport(existing),
-        ...updates,
-        id: existing.id, // giữ nguyên id bản ghi
-      };
+        const merged = {
+          ...mapRowToReport(existing),
+          ...updates,
+          id: existing.id, // giữ nguyên id bản ghi
+        };
 
-      // Tự động tính lại status từ gioRa
-      merged.status = getReportStatus(merged);
+        // Tự động tính lại status từ gioRa
+        merged.status = getReportStatus(merged);
 
-      const now = new Date().toISOString();
-      const sql = `
-        UPDATE reports SET
-          stt = ?,
-          hoTen_ThuocCtyDonVi = ?,
-          xuongGiao = ?,
-          xuongNhan = ?,
-          soThe = ?,
-          giay_to = ?,
-          loaiPhuongTien_BSX_BKSRomooc = ?,
-          soCont_SoSeal = ?,
-          chiTietHangHoa = ?,
-          soPhieu = ?,
-          gioVao = ?,
-          gioRa = ?,
-          ghiChu = ?,
-          raw_text = ?,
-          status = ?,
-          updated_at = ?
-        WHERE id = ?
-      `;
-      const values = [
-        merged.stt || "",
-        merged.hoTen_ThuocCtyDonVi || "",
-        merged.xuongGiao || "",
-        merged.xuongNhan || "",
-        merged.soThe || "",
-        merged.businessId || "",
-        merged.loaiPhuongTien_BSX_BKSRomooc || "",
-        merged.soCont_SoSeal || "",
-        merged.chiTietHangHoa || "",
-        merged.soPhieu || "",
-        merged.gioVao || "",
-        merged.gioRa || "",
-        merged.ghiChu || "",
-        merged.rawText || "",
-        merged.status,
-        now,
-        id,
-      ];
+        const now = new Date().toISOString();
+        const sql = `
+          UPDATE reports SET
+            stt = ?,
+            hoTen_ThuocCtyDonVi = ?,
+            xuongGiao = ?,
+            xuongNhan = ?,
+            soThe = ?,
+            giay_to = ?,
+            loaiPhuongTien_BSX_BKSRomooc = ?,
+            soCont_SoSeal = ?,
+            chiTietHangHoa = ?,
+            soPhieu = ?,
+            gioVao = ?,
+            gioRa = ?,
+            ghiChu = ?,
+            raw_text = ?,
+            status = ?,
+            updated_at = ?
+          WHERE id = ?
+        `;
+        const values = [
+          merged.stt || "",
+          merged.hoTen_ThuocCtyDonVi || "",
+          merged.xuongGiao || "",
+          merged.xuongNhan || "",
+          merged.soThe || "",
+          merged.businessId || "",
+          merged.loaiPhuongTien_BSX_BKSRomooc || "",
+          merged.soCont_SoSeal || "",
+          merged.chiTietHangHoa || "",
+          merged.soPhieu || "",
+          merged.gioVao || "",
+          merged.gioRa || "",
+          merged.ghiChu || "",
+          merged.rawText || "",
+          merged.status,
+          now,
+          id,
+        ];
 
-      db.run(sql, values, (err) => {
-        if (err) return reject(err);
-
-        db.get("SELECT * FROM reports WHERE id = ?", [id], (err, row) => {
-          if (err) return reject(err);
-          resolve(mapRowToReport(row));
-        });
-      });
-    });
+        return dbRun(sql, values);
+      })
+      .then(() => dbGet("SELECT * FROM reports WHERE id = ?", [id]))
+      .then((row) => resolve(mapRowToReport(row)))
+      .catch(reject);
   });
 }
 
@@ -235,10 +227,9 @@ export function updateReport(id, updates) {
  */
 export function deleteReport(id) {
   return new Promise((resolve, reject) => {
-    db.run("DELETE FROM reports WHERE id = ?", [id], function (err) {
-      if (err) return reject(err);
-      resolve(this.changes > 0);
-    });
+    dbRun("DELETE FROM reports WHERE id = ?", [id])
+      .then((result) => resolve(result.changes > 0))
+      .catch(reject);
   });
 }
 
@@ -252,10 +243,9 @@ export function getReportsByStatus(reportDate, status) {
   return new Promise((resolve, reject) => {
     const sql =
       "SELECT * FROM reports WHERE report_date = ? AND status = ? ORDER BY id ASC";
-    db.all(sql, [reportDate, status], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows.map(mapRowToReport));
-    });
+    dbAll(sql, [reportDate, status])
+      .then((rows) => resolve(rows.map(mapRowToReport)))
+      .catch(reject);
   });
 }
 

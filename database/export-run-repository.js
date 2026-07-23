@@ -1,7 +1,7 @@
 // database/export-run-repository.js
 // Repository pattern cho bảng export_runs.
 // Quản lý lịch sử xuất Excel và chống xuất trùng.
-import { db } from "./db.js";
+import { dbRun, dbGet, dbAll } from "./db.js";
 
 /**
  * Chuyển đổi một hàng SQLite thành đối tượng export run.
@@ -45,15 +45,13 @@ export function createExportRun(exportRun) {
       now,
     ];
 
-    db.run(sql, values, function (err) {
-      if (err) return reject(err);
-
-      // Lấy bản ghi vừa tạo
-      db.get("SELECT * FROM export_runs WHERE id = ?", [this.lastID], (err, row) => {
-        if (err) return reject(err);
-        resolve(mapRowToExportRun(row));
-      });
-    });
+    dbRun(sql, values)
+      .then((result) => {
+        // Lấy bản ghi vừa tạo
+        return dbGet("SELECT * FROM export_runs WHERE id = ?", [result.lastInsertRowid]);
+      })
+      .then((row) => resolve(mapRowToExportRun(row)))
+      .catch(reject);
   });
 }
 
@@ -72,10 +70,9 @@ export function hasSuccessfulExport(reportDate, exportType = "manual") {
         AND export_type = ?
         AND status = 'success'
     `;
-    db.get(sql, [reportDate, exportType], (err, row) => {
-      if (err) return reject(err);
-      resolve(row.count > 0);
-    });
+    dbGet(sql, [reportDate, exportType])
+      .then((row) => resolve(row.count > 0))
+      .catch(reject);
   });
 }
 
@@ -92,10 +89,9 @@ export function getExportRunsByDate(reportDate) {
       WHERE report_date = ?
       ORDER BY exported_at DESC
     `;
-    db.all(sql, [reportDate], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows.map(mapRowToExportRun));
-    });
+    dbAll(sql, [reportDate])
+      .then((rows) => resolve(rows.map(mapRowToExportRun)))
+      .catch(reject);
   });
 }
 
@@ -113,10 +109,9 @@ export function getExportRunsByDateRange(startDate, endDate) {
       WHERE report_date >= ? AND report_date <= ?
       ORDER BY report_date DESC, exported_at DESC
     `;
-    db.all(sql, [startDate, endDate], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows.map(mapRowToExportRun));
-    });
+    dbAll(sql, [startDate, endDate])
+      .then((rows) => resolve(rows.map(mapRowToExportRun)))
+      .catch(reject);
   });
 }
 
@@ -136,10 +131,9 @@ export function getLatestExportRun(reportDate, exportType = "manual") {
       ORDER BY exported_at DESC
       LIMIT 1
     `;
-    db.get(sql, [reportDate, exportType], (err, row) => {
-      if (err) return reject(err);
-      resolve(mapRowToExportRun(row));
-    });
+    dbGet(sql, [reportDate, exportType])
+      .then((row) => resolve(mapRowToExportRun(row)))
+      .catch(reject);
   });
 }
 
