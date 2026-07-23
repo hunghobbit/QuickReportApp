@@ -19,12 +19,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3001,
-    proxy: ENV_NODE === "development" ? devProxy : prodProxy,
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src/"),
-      "_#": path.resolve(__dirname, "../"),
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
-});
+  resolve : {
+    alias: {
+      "@" : path.resolve(__dirname, "./src/"),
+      "_#": path.resolve(__dirname, "../")
+    }
+  }
+})
