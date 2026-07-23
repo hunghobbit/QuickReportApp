@@ -186,6 +186,7 @@ export const RECORD_SCHEMA = {
       "Contact Person",
       "liên hệ",
       "Người nhận hàng",
+      "Theo đơn/DS"
     ],
     soPhieu: ["BPMs", "Phiếu MHRC", "BPM"],
     loaiPhuongTien: ["Phương tiện", "Loại xe"],
