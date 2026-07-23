@@ -1,5 +1,6 @@
-const API_BASE = "/api";
-
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://quick-report-api.onrender.com/api'  // Production
+  : '/api';  // Development
 /**
  * Send request to the backend API.
  * @param {string} path - API path (e.g., "/reports")
@@ -13,12 +14,18 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  const data = await res.json();
-
   if (!res.ok) {
-    throw new Error(data.message || `Request failed (${res.status})`);
+    let errorMessage = `Request failed (${res.status})`;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      // If response is not JSON (e.g., HTML error page), use default message
+    }
+    throw new Error(errorMessage);
   }
 
+  const data = await res.json();
   return data;
 }
 

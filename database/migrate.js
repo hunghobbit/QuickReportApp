@@ -5,7 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { dbAll, dbExec, saveDatabase } from "./db.js";
+import { dbAll, dbExec, saveDatabase, ensureInitialized } from "./db.js";
 
 const __fileName = fileURLToPath(import.meta.url);
 const __dirName = path.dirname(__fileName);
@@ -56,6 +56,9 @@ async function runMigration(filePath) {
 
 async function main() {
   console.log("🚀 Bắt đầu migration...");
+
+  // Initialize database before running migrations
+  await ensureInitialized();
 
   // Ensure migrations directory exists
   if (!fs.existsSync(MIGRATIONS_DIR)) {

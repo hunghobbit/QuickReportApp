@@ -121,6 +121,9 @@ export function dbAll(sql, params = []) {
 export function dbExec(sql) {
   return new Promise((resolve, reject) => {
     try {
+      if (!db) {
+        throw new Error("Database chưa được khởi tạo. Gọi ensureInitialized() trước.");
+      }
       db.exec(sql);
       resolve();
     } catch (err) {
@@ -142,7 +145,12 @@ let initialized = false;
 export async function ensureInitialized() {
   if (!initialized) {
     await initializeDatabase();
-    initialized = true;
+    // Only mark as initialized if db is not null
+    if (db) {
+      initialized = true;
+    } else {
+      throw new Error("Database initialization failed.");
+    }
   }
 }
 
