@@ -26,7 +26,7 @@ Chọn ngày báo cáo
 - Báo cáo chỉ được coi là hoàn tất khi đạt bộ điều kiện kiểm tra cho trạng thái `completed`.
 - Chỉnh sửa báo cáo `pending` và điền `gioRa` hợp lệ sẽ tự chuyển báo cáo sang **Đã ra xưởng**.
 - Excel xuất theo ngày đang chọn, tên file: `Báo cáo ddMMyyyyHHmmss.xlsx`.
-- File xuất gồm tất cả báo cáo của ngày đó; cần chốt sau về một hay hai worksheet cho hai trạng thái.
+- File xuất gồm tất cả báo cáo của ngày đó; bố trí hai worksheet: **Chưa ra xưởng** (pending) và **Đã ra xưởng** (completed).
 - Thống nhất dùng thuật ngữ **xưởng** trên toàn bộ giao diện, không dùng lẫn với “cổng”.
 
 ## Hiện trạng mã nguồn
@@ -79,8 +79,8 @@ Render Cron Job (00:00 Asia/Ho_Chi_Minh) → tác vụ xuất Excel
 2. `report-validation`: hai mức kiểm tra, lưu tạm và hoàn tất.
 3. Persistence: migration, schema và `sqlite-report-repository`.
 4. `report-service` và API tạo, lấy theo ngày, sửa, lấy chi tiết báo cáo.
-5. State ngày báo cáo trên frontend.
-6. Sửa `ReportFormModal`: đổi **Xuất Excel** thành **Thêm/Lưu**, gọi API lưu dữ liệu.
+5. State ngày báo cáo trên frontend. ✅ — P4
+6. Sửa `ReportFormModal`: đổi **Xuất Excel** thành **Thêm/Lưu**, gọi API lưu dữ liệu. ✅ — P4
 7. `ReportTabs`, `ReportCard` và luồng chỉnh sửa/chuyển trạng thái.
 8. `excel-export`: tạo một workbook từ toàn bộ báo cáo của một ngày.
 9. `export-run-service` và bảng `export_runs` để theo dõi/chống xuất trùng.

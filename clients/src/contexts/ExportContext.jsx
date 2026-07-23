@@ -21,21 +21,23 @@
 //   useContext(ModalFormInitValuesContext);
 import { createContext, useContext, useState } from "react";
 import { createInitialRecordForm } from "@/config/record-schema";
+import { today } from "@/utils/date";
 
-const ModalFormInitValuesContext = createContext(null);
+const AppContext = createContext(null);
 
 export const ModalFormInitValuesProvider = ({ children }) => {
   const [initForm, setInitForm] = useState(() => createInitialRecordForm());
+  const [reportDate, setReportDate] = useState(() => today());
 
   return (
-    <ModalFormInitValuesContext.Provider value={{ initForm, setInitForm }}>
+    <AppContext.Provider value={{ initForm, setInitForm, reportDate, setReportDate }}>
       {children}
-    </ModalFormInitValuesContext.Provider>
+    </AppContext.Provider>
   );
 };
 
 export const useModalFormInitValues = () => {
-  const context = useContext(ModalFormInitValuesContext);
+  const context = useContext(AppContext);
 
   if (!context) {
     throw new Error(

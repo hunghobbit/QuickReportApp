@@ -40,3 +40,17 @@ npm error gyp ERR! find VS including the "Desktop development with C++" workload
 **Lệnh thay thế:**
 ```bash
 npm install sqlite3
+```
+
+## 3. `replace_in_file` không thay đổi khi SEARCH và REPLACE giống nhau
+
+**Lỗi:**
+`replace_in_file` báo "successfully saved" nhưng nội dung file không thay đổi.
+
+**Nguyên nhân:**
+Khi SEARCH và REPLACE có nội dung giống hệt nhau (do sao chép nhầm), công cụ không thực hiện thay đổi nào nhưng vẫn báo thành công.
+
+**Cách fix:**
+- Luôn kiểm tra kỹ nội dung SEARCH và REPLACE trước khi gửi.
+- Nếu cần thay đổi lớn, dùng `write_to_file` để ghi đè toàn bộ file.
+- Đọc lại file sau khi thay đổi để xác nhận kết quả.
