@@ -8,6 +8,14 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /opt/render/project/src/storage/data/quick-report.db
+      - key: TEMPLATE_DIR
+        value: /opt/render/project/src/templates
+      - key: EXPORT_DIR
+        value: /opt/render/project/src/storage/reports
     disk:
       name: quick-report-data
       mountPath: /opt/render/project/src/storage

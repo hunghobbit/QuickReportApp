@@ -11,7 +11,7 @@ import { exportDayReport } from "./services/excel-export.js";
 import * as exportRunRepo from "./database/export-run-repository.js";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());

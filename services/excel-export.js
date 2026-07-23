@@ -11,8 +11,12 @@ import * as exportRunRepo from "../database/export-run-repository.js";
 const __fileName = fileURLToPath(import.meta.url);
 const __dirName = path.dirname(__fileName);
 
-const TEMPLATE_DIR = path.join(__dirName, "..", "templates");
-const EXPORT_DIR = path.join(__dirName, "..", "storage", "reports");
+const TEMPLATE_DIR = process.env.TEMPLATE_DIR 
+  ? path.resolve(process.env.TEMPLATE_DIR) 
+  : path.join(__dirName, "..", "templates");
+const EXPORT_DIR = process.env.EXPORT_DIR 
+  ? path.resolve(process.env.EXPORT_DIR) 
+  : path.join(__dirName, "..", "storage", "reports");
 
 // Map field names from record object to excelColumnMap keys.
 // The excelColumnMap uses `id` for "Loại giấy tờ - Số giấy tờ" (column 6),

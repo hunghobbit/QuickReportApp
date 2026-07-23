@@ -266,13 +266,58 @@ npm run preview      # Preview production build
 
 ### Environment Variables
 
-```env
-# Optional: Override database path
-DB_PATH=/path/to/database.db
+Dự án sử dụng file `.env` để quản lý biến môi trường. File `.env.example` cung cấp template với tất cả các biến cần thiết.
 
-# Optional: Server port (default: 3000)
-PORT=3000
+#### Các biến môi trường chính:
+
+```env
+# Server Configuration
+PORT=3000                    # Port chạy server (default: 3000)
+NODE_ENV=development         # Môi trường: development | production
+
+# Database Configuration
+DB_PATH=storage/data/quick-report.db  # Đường dẫn đến file SQLite database
+
+# File Paths Configuration
+TEMPLATE_DIR=templates               # Thư mục chứa Excel templates
+EXPORT_DIR=storage/reports           # Thư mục xuất Excel reports
+
+# Optional: CORS Configuration
+# CORS_ORIGIN=http://localhost:3000,http://localhost:5173
+
+# Optional: Logging
+# LOG_LEVEL=info
 ```
+
+#### Sử dụng:
+
+1. **Local Development:**
+   ```bash
+   # Copy template
+   cp .env.example .env
+   
+   # Chỉnh sửa nếu cần
+   notepad .env
+   ```
+
+2. **Production (Render):**
+   - Các biến được cấu hình trong `render.yaml`
+   - Hoặc set trực tiếp trong Render Dashboard → Environment Variables
+
+3. **Production (VPS/PM2):**
+   ```bash
+   # Set environment variables
+   export PORT=3000
+   export NODE_ENV=production
+   
+   # Hoặc dùng .env file với PM2
+   pm2 start app.js --name quick-report --env production
+   ```
+
+#### Lưu ý:
+- File `.env` không được commit lên Git (đã có trong `.gitignore`)
+- File `.env.example` là template công khai, có thể commit
+- Trong production, nên set biến môi trường trực tiếp thay vì dùng file `.env`
 
 ## Deployment
 
