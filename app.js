@@ -13,6 +13,7 @@ import { ensureInitialized, saveDatabase } from "./database/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const LOG_LEVEL = process.env.LOG_LEVEL || "combined"
 
 // Save database on exit
 process.on("SIGINT", () => {
@@ -29,7 +30,7 @@ process.on("SIGTERM", () => {
 
 app.use(cors());
 app.use(express.json());
-app.use(morgan("combined"));
+app.use(morgan(LOG_LEVEL));
 
 // ─── API Tạo báo cáo ──────────────────────────────────────────────
 app.post("/api/reports", async (req, res) => {
