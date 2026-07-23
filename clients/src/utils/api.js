@@ -1,4 +1,6 @@
-const API_BASE = "/api";
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://quick-report-api.onrender.com/api'  // Production
+  : '/api';  // Development
 
 /**
  * Send request to the backend API.
