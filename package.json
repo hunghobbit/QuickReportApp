@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon",
     "start": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "migrate": "node database/migrate.js"
   },
   "version": "1.0.0",
   "description": "API for Quick report app",
@@ -16,7 +17,8 @@
     "cors": "^2.8.6",
     "exceljs": "^3.4.0",
     "express": "^5.2.1",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "sqlite3": "^6.0.1"
   },
   "overrides": {
     "exceljs": {
@@ -27,11 +29,17 @@
   },
   "devDependencies": {
     "morgan": "^1.11.0",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "vitest": "^4.1.10"
   },
   "nodemonConfig": {
-    "watch": ["."],
-    "ignore": ["node_modules", ".git"],
+    "watch": [
+      "."
+    ],
+    "ignore": [
+      "node_modules",
+      ".git"
+    ],
     "delay": 1000
   }
 }

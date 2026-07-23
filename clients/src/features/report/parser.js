@@ -1,5 +1,5 @@
-import { createInitialRecordForm } from "_#/configs/record-schema.js";
-import { FIELD_ALIASES } from "./config.js";
+import { createInitialRecordForm } from "@/config/record-schema";
+import { FIELD_ALIASES } from "@/config/aliases";
 
 export function getFieldValueFromLine(line, aliases = []) {
   const normalizedLine = line.trim();

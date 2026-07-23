@@ -1,4 +1,4 @@
-function sanitizeText(value) {
+export function sanitizeText(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "string") return value.trim();
   return String(value).trim();
@@ -32,13 +32,13 @@ export const RECORD_SCHEMA = {
     stt: "Số thứ tự",
     hoTen: "Họ tên/Tài xế/NMH",
     thuocCtyDonVi: "Thuộc Cty/Đơn vị",
-    xuongGiao: "Xưởng Xuất",
-    xuongNhan: "Xưởng Nhập",
+    xuongGiao: "Xưởng Giao",
+    xuongNhan: "Xưởng Nhận",
     soThe: "Số thẻ",
     id: "Loại giấy tờ - Số giấy tờ",
     loaiPhuongTien: "Phương tiện",
     bks: "Biển số xe",
-    bksRomooc: "BKS Rơ-mooc",
+    bksRomooc: "BKS Rơi-mooc",
     soCont: "Số Cont",
     soSeal: "Số Seal",
     chiTietHangHoa: "Số lượng - Đơn vị - Tên hàng hóa",
@@ -47,7 +47,7 @@ export const RECORD_SCHEMA = {
     gioRa: "Giờ ra",
     ghiChu: "Ghi chú",
     hoTen_ThuocCtyDonVi: "Họ tên - Thuộc Cty/Đơn vị",
-    loaiPhuongTien_BSX_BKSRomooc: "Loại phương tiện - BSX/BKS Rơ-mooc",
+    loaiPhuongTien_BSX_BKSRomooc: "Loại phương tiện - BSX/BKS Rơi-mooc",
     soCont_SoSeal: "Số Cont - Số Seal",
   },
   groups: [
@@ -125,6 +125,9 @@ export const RECORD_SCHEMA = {
     "gioVao",
     "gioRa",
   ],
+  // Field-name → field-name fallbacks used when resolving a value from a
+  // structured object (e.g. parsed JSON).  Each entry lists alternative field
+  // names that may hold the value when the primary name is absent.
   aliases: {
     id: ["cccd"],
     soCont: ["soCont_SoSeal"],
@@ -134,6 +137,102 @@ export const RECORD_SCHEMA = {
     loaiPhuongTien: ["loaiPhuongTien_BSX_BKSRomooc"],
     bks: ["loaiPhuongTien_BSX_BKSRomooc"],
     bksRomooc: ["loaiPhuongTien_BSX_BKSRomooc"],
+  },
+  // Field-name → list of header-text variations used when parsing free-text
+  // or scanned reports.  These are the human-readable labels that may appear
+  // in a text block, not field names.  Consolidated here so that
+  // `configs/record-schema.js` is the single source of truth for every label
+  // and alias in the project.
+  textAliases: {
+    hoTen: [
+      "Họ tên",
+      "Họ Tên",
+      "Full Name",
+      "Name",
+      "Họ và tên",
+      "Tên",
+      "Tài xế",
+      "NMH",
+      "Người mang hàng",
+    ],
+    thuocCtyDonVi: ["Cty", "Công ty", "Company", "Công ty/Đơn vị", "Cty/Đơn vị"],
+    liDoRaVaoCong: ["Lý do", "Mục đích", "Reason", "Purpose"],
+    chiTietHangHoa: [
+      "Chủng loại/Số lượng",
+      "Chủng loại",
+      "số lượng",
+      "goods details",
+      "Đặc tả hàng hóa",
+      "Mô tả hàng hóa",
+      "Hàng hóa",
+      "hàng hóa",
+      "Goods Description",
+      "Chi Tiết Hàng hóa",
+    ],
+    soCont: ["Số Cont", "Số cont", "Số thùng cont", "cont no.", "Cont No."],
+    soSeal: ["Số Seal", "Số seal", "Seal", "seal"],
+    gioVao: ["Giờ vào", "Thời gian vào", "Time in", "Vào", "Vào cổng lúc"],
+    gioRa: [
+      "Giờ ra",
+      "Thời gian ra",
+      "Time out",
+      "Ra",
+      "Ra cổng lúc",
+      "rời",
+      "Rời",
+    ],
+    nguoiLienHe: [
+      "Người liên hệ",
+      "Contact Person",
+      "liên hệ",
+      "Người nhận hàng",
+    ],
+    soPhieu: ["BPMs", "Phiếu MHRC", "BPM"],
+    loaiPhuongTien: ["Phương tiện", "Loại xe"],
+    bks: [
+      "BSX",
+      "bsx",
+      "Bsx",
+      "BKS",
+      "Bks",
+      "bks",
+      "Plate No.",
+      "Biển số xe",
+      "Biển Số Xe",
+    ],
+    bksRomooc: ["Rơ-mooc", "Rơ móc", "Rơ-móc", "ro mooc", "rơ-mooc", "Rơ Mooc"],
+    id: [
+      "cccd",
+      "CCCD/GPLX",
+      "Cccd",
+      "GPLX",
+      "BST",
+      "Số thẻ",
+      "MST",
+      "VAT",
+      "Employee ID",
+    ],
+    xuongGiao: [
+      "cty",
+      "Cty/Đơn vị",
+      "Công ty",
+      "Giao",
+      "Xưởng Xuất",
+      "Xưởng nhập",
+      "xưởng nhập",
+      "xưởng Nhập",
+      "Delivery",
+      "Export Factory",
+    ],
+    xuongNhan: [
+      "cty",
+      "Cty/Đơn vị",
+      "Công ty",
+      "Nhận",
+      "Xưởng Nhập",
+      "Received",
+      "Import Factory",
+    ],
   },
   fieldTypes: {
     stt: "number",
@@ -260,7 +359,7 @@ export function createInitialRecordForm(initValues = {}) {
   return Object.fromEntries(
     RECORD_SCHEMA.formFields.map((fieldName) => [
       fieldName,
-      initValues[fieldName] ?? ("" || 0),
+      initValues[fieldName] ?? "",
     ]),
   );
 }

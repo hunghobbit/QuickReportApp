@@ -8,15 +8,15 @@ Tài liệu này sắp xếp công việc theo phụ thuộc. Không triển kha
 - [x] Ngừng bổ sung tính năng mới cho `public/` legacy. (đã xóa)
 - [x] Rà và sửa các import/export React để build ổn định trên môi trường Linux/CI.
 - [x] Gom parser về một implementation duy nhất.
-- [ ] Xóa hoặc hợp nhất các nhãn/alias trùng với `configs/record-schema.js`.
+- [x] Xóa hoặc hợp nhất các nhãn/alias trùng với `configs/record-schema.js`.
 
 ## P1 — Nghiệp vụ và kiểm tra dữ liệu
 
-- [ ] Viết `report-status`: `gioRa` trống là `pending`; `gioRa` hợp lệ là `completed`.
-- [ ] Quy định rõ tập trường bắt buộc khi lưu `pending`.
-- [ ] Quy định rõ tập trường bắt buộc khi lưu `completed`.
-- [ ] Cập nhật validator để hỗ trợ hai chế độ: lưu tạm và hoàn tất.
-- [ ] Viết test cho chuẩn hóa giờ, phân loại trạng thái và validation.
+- [x] Viết `report-status`: `gioRa` trống là `pending`; `gioRa` hợp lệ là `completed`.
+- [x] Quy định rõ tập trường bắt buộc khi lưu `pending`.
+- [x] Quy định rõ tập trường bắt buộc khi lưu `completed`.
+- [x] Cập nhật validator để hỗ trợ hai chế độ: lưu tạm và hoàn tất.
+- [x] Viết test cho chuẩn hóa giờ, phân loại trạng thái và validation.
 
 ## P2 — Lưu trữ SQLite
 

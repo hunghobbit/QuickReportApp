@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/button";
-import { parseReportText } from "_#/modules/parser";
-import { normalizeRecordInput, RECORD_SCHEMA } from "_#/configs/record-schema";
+import { parseReportText } from "@/features/report/parser";
+import { normalizeRecordInput } from "@/config/record-schema";
 import { useModalFormInitValues } from "@/contexts/ExportContext";
 import { openReportForm } from "./ReportFormModal";
 
