@@ -8,3 +8,4 @@ storage/data/*.db
 storage/reports/*
 !storage/data/.gitkeep
 !storage/reports/.gitkeep
+database/generated/*
