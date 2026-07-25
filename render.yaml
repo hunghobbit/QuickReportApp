@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install && cd clients && npm install && npm run build && cd .. && npx prisma generate && npx prisma db push && node database/seed.js
-    startCommand: node app.js
+    startCommand: npx prisma generate && node app.js
     envVars:
       - key: NODE_ENV
         value: production
