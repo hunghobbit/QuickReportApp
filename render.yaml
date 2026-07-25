@@ -3,20 +3,28 @@ services:
     name: quick-report-api
     runtime: node
     plan: free
-    buildCommand: npm install && cd clients && npm install && npm run build && cd ..
+    buildCommand: npm install && cd clients && npm install && npm run build && cd .. && npx prisma generate && npx prisma db push && node database/seed.js
     startCommand: node app.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: DB_PATH
-        value: /opt/render/project/src/storage/data/quick-report.db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quick-report-db
+          property: connectionString
       - key: TEMPLATE_DIR
         value: /opt/render/project/src/templates
       - key: EXPORT_DIR
         value: /opt/render/project/src/storage/reports
-    disk:
-      name: quick-report-data
-      mountPath: /opt/render/project/src/storage
-      sizeGB: 1
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+databases:
+  - name: quick-report-db
+    plan: free
+    databaseName: quickreport
+    user: quickreport_user
