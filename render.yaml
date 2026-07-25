@@ -14,7 +14,7 @@ services:
         fromDatabase:
           name: quick-report-db
           property: connectionString
-      - key: TEMPLATE_DIR
+      - key: TEMPLATE_DIR 
         value: /opt/render/project/src/templates
       - key: EXPORT_DIR
         value: /opt/render/project/src/storage/reports

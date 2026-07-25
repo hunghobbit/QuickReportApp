@@ -3,7 +3,7 @@
     // Kết nối đến PostgreSQL qua DATABASE_URL trong biến môi trường.
     // Sử dụng @prisma/adapter-pg cho Prisma 7.
 
-    import { PrismaClient } from "./generated/client";
+    import { PrismaClient } from "./generated/client.js";
     import { PrismaPg } from "@prisma/adapter-pg";
 
     let prisma = null;

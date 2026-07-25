@@ -1,4 +1,4 @@
-// prisma.config.ts
+// prisma.config.js
 // Prisma 7 configuration — chứa datasource config thay vì trong schema.prisma
 // Xem: https://pris.ly/d/config-datasource
 import "dotenv/config"
