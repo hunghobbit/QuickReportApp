@@ -14,22 +14,22 @@
   "author": "hunghobbit",
   "license": "MIT",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/client": "^7.9.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "exceljs": "^3.4.0",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
+    "pg": "^8.22.0",
     "sql.js": "^1.10.3"
-  },
-  "overrides": {
-    "exceljs": {
-      "tmp": "^0.2.5",
-      "fast-csv": "^4.3.6",
-      "uuid": "^11.1.1"
-    }
   },
   "devDependencies": {
     "morgan": "^1.11.0",
     "nodemon": "^3.1.14",
+    "prisma": "^7.9.0",
     "vitest": "^4.1.10"
   },
   "nodemonConfig": {

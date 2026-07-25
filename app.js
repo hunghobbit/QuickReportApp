@@ -8,23 +8,25 @@ import {
   updateReport,
 } from "./services/report-service.js";
 import { exportDayReport } from "./services/excel-export.js";
-import * as exportRunRepo from "./database/export-run-repository.js";
-import { ensureInitialized, saveDatabase } from "./database/db.js";
+import * as exportRunRepo from "./database/prisma-export-run-repository.js";
+import { login, verifyToken, getUsers } from "./services/auth-service.js";
+import { requireAuth, optionalAuth } from "./middleware/auth.js";
+import { getPrisma, disconnectPrisma } from "./database/prisma-client.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const LOG_LEVEL = process.env.LOG_LEVEL || "combined"
 
-// Save database on exit
-process.on("SIGINT", () => {
-  console.log("\n💾 Đang lưu database...");
-  saveDatabase();
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  console.log("\n💾 Đang đóng kết nối database...");
+  await disconnectPrisma();
   process.exit(0);
 });
 
-process.on("SIGTERM", () => {
-  console.log("\n💾 Đang lưu database...");
-  saveDatabase();
+process.on("SIGTERM", async () => {
+  console.log("\n💾 Đang đóng kết nối database...");
+  await disconnectPrisma();
   process.exit(0);
 });
 
@@ -32,10 +34,59 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan(LOG_LEVEL));
 
-// ─── API Tạo báo cáo ──────────────────────────────────────────────
-app.post("/api/reports", async (req, res) => {
+// ─── API Auth ──────────────────────────────────────────────────
+app.post("/api/auth/login", async (req, res) => {
   try {
-    const result = await createReport(req.body);
+    const { name, password } = req.body;
+    if (!name || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng cung cấp tên đăng nhập và mật khẩu.",
+      });
+    }
+
+    const result = await login(name, password);
+    if (!result.success) {
+      return res.status(401).json({ success: false, message: result.error });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: result.token,
+        user: result.user,
+      },
+    });
+  } catch (error) {
+    console.error("[POST /api/auth/login] Server error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Lỗi đăng nhập.",
+    });
+  }
+});
+
+app.get("/api/auth/me", requireAuth, async (req, res) => {
+  return res.status(200).json({ success: true, data: req.user });
+});
+
+app.get("/api/users", requireAuth, async (req, res) => {
+  try {
+    const users = await getUsers();
+    return res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    console.error("[GET /api/users] Server error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Không thể lấy danh sách người dùng.",
+    });
+  }
+});
+
+// ─── API Tạo báo cáo ──────────────────────────────────────────
+app.post("/api/reports", optionalAuth, async (req, res) => {
+  try {
+    const result = await createReport(req.body, "draft", req.user);
     if (!result.success) {
       return res.status(400).json({ success: false, message: result.error });
     }
@@ -124,7 +175,7 @@ app.get("/api/reports/:id", async (req, res) => {
 });
 
 // ─── API Cập nhật báo cáo ─────────────────────────────────────────
-app.put("/api/reports/:id", async (req, res) => {
+app.put("/api/reports/:id", optionalAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -133,7 +184,7 @@ app.put("/api/reports/:id", async (req, res) => {
         .json({ success: false, message: "Invalid report ID." });
     }
 
-    const result = await updateReport(id, req.body);
+    const result = await updateReport(id, req.body, req.user);
     if (!result.success) {
       // Phân biệt lỗi 404 và 400
       const statusCode = result.error === "Report not found." ? 404 : 400;
@@ -202,9 +253,11 @@ app.get("/api/reports/export/history", async (req, res) => {
 // ─── Khởi động server ─────────────────────────────────────────────
 async function startServer() {
   try {
-    // Initialize database before starting server
-    await ensureInitialized();
-    
+    // Initialize Prisma before starting server
+    const prisma = getPrisma();
+    await prisma.$connect();
+    console.log("✅ Đã kết nối Prisma database");
+
     app.listen(PORT, () => {
       console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
     });

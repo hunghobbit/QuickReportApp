@@ -2,8 +2,11 @@
 
 import { Home, User, Plus } from "lucide-react"
 import { openReportChat } from "@/components/report/ReportChat"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function MobileBottomNav() {
+  const { user, logout } = useAuth();
+
   return (
     <nav
       aria-label="Thanh điều hướng dưới cùng"
@@ -20,10 +23,11 @@ export function MobileBottomNav() {
 
         <button
           type="button"
+          onClick={logout}
           className="flex flex-col items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
         >
           <User className="size-6" aria-hidden="true" />
-          <span className="text-[11px] font-medium">Tài khoản</span>
+          <span className="text-[11px] font-medium">Đăng xuất</span>
         </button>
 
         {/* Floating action button, centered on the bar */}

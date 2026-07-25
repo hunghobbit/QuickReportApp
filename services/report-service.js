@@ -3,8 +3,8 @@
 // Kết hợp validation + status rule + repository để xử lý nghiệp vụ báo cáo.
 import { validateRecordPayload } from "./record-validation.js";
 import { getReportStatus } from "./report-status.js";
-import { sanitizeText, normalizeTime } from "../configs/record-schema.js";
-import * as repo from "../database/sqlite-report-repository.js";
+import { sanitizeText, normalizeTime, RECORD_SCHEMA } from "../configs/record-schema.js";
+import * as repo from "../database/prisma-report-repository.js";
 
 // Các trường được phép cập nhật (tương ứng với payloadFields trong schema,
 // nhưng không bao gồm các trường chỉ đọc như id, status, createdAt, updatedAt)
@@ -23,6 +23,7 @@ const ALLOWED_UPDATE_FIELDS = [
   "gioRa",
   "ghiChu",
   "rawText",
+  "reportType",
 ];
 
 /**
@@ -35,13 +36,59 @@ function extractPayload(body) {
 }
 
 /**
+ * Phát hiện loại báo cáo (import/export) từ raw text.
+ * Dựa trên từ khóa "Hàng Nhập" → import, "Hàng Xuất" → export
+ */
+function detectReportType(rawText = "") {
+  const text = rawText.toLowerCase();
+  if (text.includes("hàng nhập") || text.includes("hàng nhập") || text.includes("import")) {
+    return "import";
+  }
+  if (text.includes("hàng xuất") || text.includes("hàng xuất") || text.includes("export")) {
+    return "export";
+  }
+  return null;
+}
+
+/**
+ * Tự động điền xưởng dựa trên reportType và team của user.
+ * - Import (Hàng Nhập): Xưởng Nhận = team của user
+ * - Export (Hàng Xuất): Xưởng Xuất = team của user
+ * Chỉ ghi đè nếu trường đang trống.
+ */
+function autoFillFactory(report, user = null) {
+  const updated = { ...report };
+
+  // Nếu chưa có reportType, thử detect từ rawText (luôn thực hiện, không phụ thuộc user)
+  if (!updated.reportType && updated.rawText) {
+    updated.reportType = detectReportType(updated.rawText);
+  }
+
+  // Chỉ auto-fill xưởng nếu có user và team
+  if (user && user.team) {
+    // Import: Xưởng Nhận = team của user (ELA hoặc DTA)
+    if (updated.reportType === "import" && !updated.xuongNhan) {
+      updated.xuongNhan = user.team;
+    }
+    
+    // Export: Xưởng Xuất = team của user (ELA hoặc DTA)
+    if (updated.reportType === "export" && !updated.xuongGiao) {
+      updated.xuongGiao = user.team;
+    }
+  }
+
+  return updated;
+}
+
+/**
  * Tạo một báo cáo mới.
  *
  * @param {object} body - Request body: { reportDate, tempRecord?, mode? }
  * @param {"draft"|"complete"} [mode="draft"] - Chế độ validation
+ * @param {object} [user=null] - User object từ JWT (có team)
  * @returns {Promise<{ success: boolean, data?: object, error?: string }>}
  */
-export async function createReport(body, mode = "draft") {
+export async function createReport(body, mode = "draft", user = null) {
   try {
     const { reportDate, mode: bodyMode } = body || {};
     const effectiveMode = bodyMode || mode;
@@ -74,11 +121,16 @@ export async function createReport(body, mode = "draft") {
       reportDate,
       ...validation.record,
       rawText: payload.rawText || "",
-      businessId: payload.id || "",
+      businessId: payload.id || payload.businessId || "",
       status: validation.status || getReportStatus(validation.record),
+      reportType: payload.reportType || validation.record.reportType || detectReportType(payload.rawText),
+      userId: payload.userId || user?.id || null,
     };
 
-    const created = await repo.createReport(report);
+    // Auto-fill xưởng dựa trên team của user
+    const finalReport = autoFillFactory(report, user);
+
+    const created = await repo.createReport(finalReport);
     return { success: true, data: created };
   } catch (err) {
     console.error("[report-service] createReport error:", err);
@@ -137,9 +189,10 @@ export async function getReportById(id) {
  *
  * @param {number} id
  * @param {object} body - Request body: các field cần cập nhật
+ * @param {object} [user=null] - User object từ JWT
  * @returns {Promise<{ success: boolean, data?: object, error?: string }>}
  */
-export async function updateReport(id, body) {
+export async function updateReport(id, body, user = null) {
   try {
     // Lấy bản ghi hiện tại để kiểm tra tồn tại
     const existing = await repo.getReportById(id);
@@ -216,6 +269,17 @@ export async function updateReport(id, body) {
       return { success: false, error: "No valid fields to update." };
     }
 
+    // Auto-fill xưởng dựa trên team của user
+    const merged = { ...existing, ...updates };
+    if (user && user.team) {
+      if (merged.reportType === "import" && !merged.xuongNhan) {
+        updates.xuongNhan = user.team;
+      }
+      if (merged.reportType === "export" && !merged.xuongGiao) {
+        updates.xuongGiao = user.team;
+      }
+    }
+
     // Cập nhật qua repository (tự động tính lại status từ gioRa)
     const updated = await repo.updateReport(id, updates);
     if (!updated) {
@@ -264,6 +328,9 @@ export async function getReportsByStatus(reportDate, status) {
     };
   }
 }
+
+// Export functions for testing
+export { detectReportType, autoFillFactory };
 
 export default {
   createReport,

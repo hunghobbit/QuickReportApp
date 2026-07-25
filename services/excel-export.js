@@ -5,8 +5,8 @@ import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import { RECORD_SCHEMA } from "../configs/record-schema.js";
 import { START_ROW, ROW_LIMIT, COL_LIMIT } from "../configs/worksheet-config.js";
-import * as reportRepo from "../database/sqlite-report-repository.js";
-import * as exportRunRepo from "../database/export-run-repository.js";
+import * as reportRepo from "../database/prisma-report-repository.js";
+import * as exportRunRepo from "../database/prisma-export-run-repository.js";
 
 const __fileName = fileURLToPath(import.meta.url);
 const __dirName = path.dirname(__fileName);
@@ -94,8 +94,9 @@ function writeRecordToRow(worksheet, record, rowIndex) {
     // Map field name nếu cần (vd: excelColumnMap dùng "id" nhưng record dùng "businessId")
     const recordField = FIELD_MAP[field] || field;
     let value = record[recordField];
-    if (value === undefined || value === null) {
-      value = "";
+    // Nếu giá trị trống (undefined, null, hoặc chuỗi rỗng) → ghi "Không"
+    if (value === undefined || value === null || value === "") {
+      value = "Không";
     }
     worksheet.getCell(rowIndex, column).value = value;
   });

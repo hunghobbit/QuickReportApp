@@ -5,6 +5,8 @@ import "./index.css";
 import { DesktopTopNav } from "./components/layout/DesktopTopNav";
 import { MobileBottomNav } from "./components/layout/MobileBottomNav";
 import { ModalFormInitValuesProvider, useModalFormInitValues } from "./contexts/ExportContext";
+import { useAuth } from "./contexts/AuthContext";
+import { LoginPage } from "./components/auth";
 import ReportDatePicker from "./components/report/ReportDatePicker";
 
 function AppContent() {
@@ -14,9 +16,17 @@ function AppContent() {
   const [editRecord, setEditRecord] = useState(null);
   const [editTrigger, setEditTrigger] = useState(0);
 
+  // State cho xem chi tiết (chỉ đọc) báo cáo đã ra xưởng
+  const [viewRecord, setViewRecord] = useState(null);
+
   const handleEdit = useCallback((record) => {
     // Nhận toàn bộ record từ card để điền vào form chỉnh sửa
     setEditRecord(record);
+  }, []);
+
+  const handleView = useCallback((record) => {
+    // Mở modal xem chi tiết (chỉ đọc) cho báo cáo đã ra xưởng
+    setViewRecord(record);
   }, []);
 
   const handleSaved = useCallback(() => {
@@ -28,6 +38,10 @@ function AppContent() {
 
   const handleCloseModal = useCallback(() => {
     setEditRecord(null);
+  }, []);
+
+  const handleCloseView = useCallback(() => {
+    setViewRecord(null);
   }, []);
 
   return (
@@ -49,9 +63,15 @@ function AppContent() {
             onClose={handleCloseModal}
           />
 
+          <ReportEls.ReportViewModal
+            viewRecord={viewRecord}
+            onClose={handleCloseView}
+          />
+
           <ReportEls.ReportTabs
             reportDate={reportDate}
             onEdit={handleEdit}
+            onView={handleView}
             editTrigger={editTrigger}
           />
         </div>
@@ -64,6 +84,13 @@ function AppContent() {
 }
 
 const App = () => {
+  const { isAuthenticated } = useAuth();
+
+  // Nếu chưa đăng nhập → hiển thị trang đăng nhập
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <ModalFormInitValuesProvider>
       <AppContent />

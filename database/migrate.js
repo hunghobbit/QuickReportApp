@@ -1,109 +1,98 @@
 // database/migrate.js
-// Migration runner: applies SQL migration files in alphabetical order.
-// Uses CREATE TABLE IF NOT EXISTS and checks for existing columns before
-// ALTER TABLE, so it is safe to run on an already-existing database.
-import fs from "fs";
-import path from "path";
+// Script migration cho Prisma ORM với PostgreSQL.
+// Chạy: node database/migrate.js
+//
+// Prisma 7 yêu cầu config datasource trong prisma.config.ts thay vì schema.prisma
+// Script này đồng bộ schema với database và generate Prisma Client.
+
+import { execSync } from "child_process";
+import { existsSync, readFileSync } from "fs";
+import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { dbAll, dbExec, saveDatabase, ensureInitialized } from "./db.js";
 
-const __fileName = fileURLToPath(import.meta.url);
-const __dirName = path.dirname(__fileName);
-const MIGRATIONS_DIR = path.join(__dirName, "migrations");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const rootDir = resolve(__dirname, "..");
 
-/**
- * Get list of existing column names for a table.
- * Returns a Set of lowercase column names.
- */
-function getTableColumns(tableName) {
-  return dbAll(`PRAGMA table_info(${tableName})`).then((rows) =>
-    new Set(rows.map((r) => r.name.toLowerCase()))
-  );
+function log(message, type = "INFO") {
+  const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
+  console.log(`[${timestamp}] [${type}] ${message}`);
 }
 
-/**
- * Run a single migration file.
- * Supports CREATE TABLE IF NOT EXISTS and ALTER TABLE ADD COLUMN (with
- * existence check) so migrations are idempotent.
- */
-async function runMigration(filePath) {
-  const sql = fs.readFileSync(filePath, "utf8");
-
-  // Split into statements by semicolon (naive but sufficient for our migrations).
-  const statements = sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-
-  for (const stmt of statements) {
-    // Handle ALTER TABLE ADD COLUMN with existence check
-    const alterMatch = stmt.match(
-      /^ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)\s+(.+)$/i,
-    );
-    if (alterMatch) {
-      const tableName = alterMatch[1];
-      const columnName = alterMatch[2].toLowerCase();
-      const columns = await getTableColumns(tableName);
-      if (columns.has(columnName)) {
-        console.log(`  ⏭️  Cột ${columnName} đã tồn tại trong bảng ${tableName}, bỏ qua.`);
-        continue;
-      }
-    }
-
-    await dbExec(stmt);
+function runCommand(command, cwd = rootDir) {
+  log(`Running: ${command}`);
+  try {
+    execSync(command, {
+      cwd,
+      stdio: "inherit",
+      env: { ...process.env },
+      timeout: 60000,
+    });
+    return true;
+  } catch (error) {
+    log(`Command failed: ${error.message}`, "ERROR");
+    return false;
   }
 }
 
 async function main() {
-  console.log("🚀 Bắt đầu migration...");
+  console.log("=".repeat(60));
+  log("QuickReportApp - Database Migration (PostgreSQL)");
+  console.log("=".repeat(60));
 
-  // Initialize database before running migrations
-  await ensureInitialized();
-
-  // Ensure migrations directory exists
-  if (!fs.existsSync(MIGRATIONS_DIR)) {
-    console.log("⚠️  Thư mục migrations không tồn tại, tạo mới.");
-    fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
-    console.log("✅ Migration hoàn tất (không có file migration nào).");
-    return;
-  }
-
-  const migrationFiles = fs
-    .readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith(".sql"))
-    .sort();
-
-  if (migrationFiles.length === 0) {
-    console.log("⚠️  Không có file migration nào.");
-    return;
-  }
-
-  for (const file of migrationFiles) {
-    const filePath = path.join(MIGRATIONS_DIR, file);
-    console.log(`  📄 Áp dụng migration: ${file}`);
-    try {
-      await runMigration(filePath);
-      console.log(`  ✅ Hoàn thành: ${file}`);
-    } catch (err) {
-      console.error(`  ❌ Lỗi migration ${file}:`, err.message);
-      throw err;
+  // 1. Kiểm tra DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    // Thử đọc từ file .env
+    const envPath = resolve(rootDir, ".env");
+    if (existsSync(envPath)) {
+      const envContent = readFileSync(envPath, "utf-8");
+      const match = envContent.match(/DATABASE_URL\s*=\s*"(.+?)"/);
+      if (match) {
+        process.env.DATABASE_URL = match[1].trim();
+        log(`DATABASE_URL loaded from .env file`);
+      }
     }
   }
 
-  console.log("🎉 Tất cả migration đã được áp dụng.");
-  
-  // Save database after migrations
-  saveDatabase();
-  console.log("💾 Database đã được lưu.");
+  if (!process.env.DATABASE_URL) {
+    log(
+      "DATABASE_URL is required but not found. Set it in .env file or environment variables.",
+      "ERROR",
+    );
+    log(
+      'Example: DATABASE_URL="postgresql://postgres:postgres@localhost:5432/quickreport"',
+    );
+    process.exit(1);
+  }
+
+  log(`Connecting to database...`);
+
+  // 2. Đồng bộ schema với database (Prisma 7 dùng prisma.config.ts)
+  log("Syncing database schema (prisma db push)...");
+  const pushSuccess = runCommand("npx prisma db push");
+  if (!pushSuccess) {
+    log(
+      "Failed to sync database schema. Check that PostgreSQL is running and DATABASE_URL is correct.",
+      "ERROR",
+    );
+    process.exit(1);
+  }
+  log("Database schema synced successfully.");
+
+  // 3. Generate Prisma Client
+  log("Generating Prisma Client...");
+  const generateSuccess = runCommand("npx prisma generate");
+  if (!generateSuccess) {
+    log("Failed to generate Prisma Client.", "ERROR");
+    process.exit(1);
+  }
+  log("Prisma Client generated successfully.");
+
+  console.log("=".repeat(60));
+  log("Migration completed successfully!");
+  console.log("=".repeat(60));
 }
 
-main()
-  .catch((err) => {
-    console.error("❌ Migration thất bại:", err);
-    process.exit(1);
-  })
-  .finally(() => {
-    // sql.js: save database before exit
-    saveDatabase();
-    console.log("💾 Database đã được lưu.");
-  });
+main().catch((error) => {
+  log(`Unexpected error: ${error.message}`, "ERROR");
+  process.exit(1);
+});

@@ -1,0 +1,72 @@
+// ──────────────────────────────────────────────────────────────
+// Prisma Schema — QuickReportApp
+// Quản lý 3 bảng: User, Report, ExportRun
+// ──────────────────────────────────────────────────────────────
+datasource db {
+  provider = "postgresql",
+  url = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── User: Đội ELA / Đội DTA ──────────────────────────────────
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique               // "Đội ELA" | "Đội DTA"
+  team         String                          // "ELA" | "DTA"
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  reports      Report[]
+
+  @@map("users")
+}
+
+// ─── Report: báo cáo hàng nhập / hàng xuất ────────────────────
+model Report {
+  id                           Int       @id @default(autoincrement())
+  reportDate                   String    // YYYY-MM-DD
+  stt                          String    @default("")
+  hoTen_ThuocCtyDonVi          String    @default("")
+  xuongGiao                    String    @default("")  // Xưởng Xuất (export)
+  xuongNhan                    String    @default("")  // Xưởng Nhận (import)
+  soThe                        String    @default("")
+  giayTo                       String    @default("")
+  loaiPhuongTien_BSX_BKSRomooc String    @default("")
+  soCont_SoSeal                String    @default("")
+  chiTietHangHoa               String    @default("")
+  soPhieu                      String    @default("")
+  gioVao                       String    @default("")
+  gioRa                        String    @default("")
+  ghiChu                       String    @default("")
+  rawText                      String    @default("")
+  status                       String    @default("pending")
+  reportType                   String?   // "import" | "export" | null
+  userId                       Int?
+  user                         User?     @relation(fields: [userId], references: [id])
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+
+  @@index([reportDate])
+  @@index([status])
+  @@map("reports")
+}
+
+// ─── ExportRun: lịch sử xuất Excel ────────────────────────────
+model ExportRun {
+  id           Int      @id @default(autoincrement())
+  reportDate   String
+  exportType   String   @default("manual")
+  exportedAt   DateTime
+  fileName     String
+  filePath     String
+  status       String   @default("success")
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([reportDate])
+  @@index([exportType])
+  @@map("export_runs")
+}

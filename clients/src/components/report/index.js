@@ -3,6 +3,7 @@ export { default as ReportField } from "./ReportField";
 export { default as ReportChat } from "./ReportChat";
 export { default as CreateReportButton } from "./CreateReportButton";
 export { default as ReportFormModal } from "./ReportFormModal";
+export { default as ReportViewModal } from "./ReportViewModal";
 export { default as ReportDatePicker } from "./ReportDatePicker";
 export { default as ReportTabs } from "./ReportTabs";
 export { default as ReportCard } from "./ReportCard";

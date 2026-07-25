@@ -10,10 +10,11 @@ import { getReportsByDate, exportExcel } from "@/utils/api";
  *
  * @param {object}       props
  * @param {string}       props.reportDate - Ngày báo cáo (YYYY-MM-DD)
- * @param {(record: object) => void} props.onEdit - Callback khi bấm Chỉnh sửa
+ * @param {(record: object) => void} props.onEdit - Callback khi bấm Chỉnh sửa (pending)
+ * @param {(record: object) => void} props.onView  - Callback khi chạm card completed (xem chi tiết)
  * @param {number|null}  props.editTrigger - Giá trị thay đổi để reload (dùng để trigger sau khi lưu/sửa)
  */
-export default function ReportTabs({ reportDate, onEdit, editTrigger }) {
+export default function ReportTabs({ reportDate, onEdit, onView, editTrigger }) {
   const [activeTab, setActiveTab] = useState("pending"); // "pending" | "completed"
   const [pending, setPending] = useState([]);
   const [completed, setCompleted] = useState([]);
@@ -173,6 +174,7 @@ export default function ReportTabs({ reportDate, onEdit, editTrigger }) {
               record={record}
               isPending={activeTab === "pending"}
               onEdit={activeTab === "pending" ? onEdit : undefined}
+              onView={activeTab === "completed" ? onView : undefined}
             />
           ))}
         </div>

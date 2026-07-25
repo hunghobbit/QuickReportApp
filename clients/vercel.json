@@ -11,7 +11,8 @@
   ],
   "routes": [
     {
-      "source": "/api/(.*)",
+      "$schema": "https://openapi.vercel.sh/vercel.json",
+      "source": "/api/((?!general).*)",
       "destination": "https://quick-report-api.onrender.com/api/$1"
     },
     {
