@@ -36,7 +36,7 @@ export default function ReportDatePicker({ date, onChange }) {
         type="date"
         value={date}
         onChange={handleChange}
-        className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="report-date-input rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
       <button

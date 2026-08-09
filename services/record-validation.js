@@ -6,14 +6,7 @@ import {
 } from "../configs/record-schema.js";
 import { getReportStatus } from "./report-status.js";
 
-// Required fields for a draft (pending) report — everything except gioRa,
-// which is allowed to be empty until the vehicle leaves the gate.
-const requiredDraftFields = RECORD_SCHEMA.requiredPayloadFields.filter(
-  (field) => field !== "gioRa",
-);
-
-// Required fields for a completed report — all required fields including gioRa.
-const requiredCompleteFields = RECORD_SCHEMA.requiredPayloadFields;
+const requiredInputFields = RECORD_SCHEMA.requiredInputFields;
 
 function buildRecord(normalizedInput) {
   return {
@@ -72,6 +65,9 @@ export function validateRecordPayload(payload, mode = "complete") {
     return { ok: false, error: "Payload must be an object." };
   }
 
+  const rawGioVao = sanitizeText(parsedPayload.gioVao);
+  const rawGioRa = sanitizeText(parsedPayload.gioRa);
+
   const normalizedInput = normalizeRecordInput(parsedPayload);
 
   // Sanitize all string fields.
@@ -90,32 +86,35 @@ export function validateRecordPayload(payload, mode = "complete") {
     }
   }
 
-  // stt must be numeric.
+  // stt must be numeric when provided.
   if (RECORD_SCHEMA.validators.stt(normalizedInput.stt) === false) {
     return { ok: false, error: "Field stt must be numeric." };
   }
 
-  // gioVao must always be a valid time.
-  const normalizedGioVao = normalizeTime(normalizedInput.gioVao);
-  if (!normalizedGioVao) {
+  // gioVao must be a valid time when provided.
+  if (rawGioVao && !normalizeTime(rawGioVao)) {
     return { ok: false, error: "Field gioVao must be a valid time." };
   }
 
-  // In complete mode, gioRa must also be valid.
+  // gioRa must be a valid time when provided.
+  if (rawGioRa && !normalizeTime(rawGioRa)) {
+    return {
+      ok: false,
+      error: "Field gioRa must be a valid time.",
+    };
+  }
+
   if (mode === "complete") {
-    const normalizedGioRa = normalizeTime(normalizedInput.gioRa);
+    const normalizedGioRa = normalizeTime(rawGioRa);
     if (!normalizedGioRa) {
       return {
         ok: false,
-        error: "Field gioRa must be a valid time when saving as completed.",
+        error: "Field gioRa is required in complete mode.",
       };
     }
   }
 
-  // Check required fields based on mode.
-  const requiredFields =
-    mode === "draft" ? requiredDraftFields : requiredCompleteFields;
-  const missingError = checkRequiredFields(normalizedInput, requiredFields);
+  const missingError = checkRequiredFields(normalizedInput, requiredInputFields);
   if (missingError) {
     return { ok: false, error: missingError };
   }

@@ -51,7 +51,7 @@ export default function ReportCard({ record, isPending, onEdit, onView }) {
 
   return (
     <div
-      className={`group relative rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md
+      className={`group relative max-w-full overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md
         ${isClickable ? "cursor-pointer sm:cursor-default" : "cursor-default"}`}
       onClick={isClickable ? handleCardClick : undefined}
       role={isClickable ? "button" : undefined}
@@ -82,7 +82,7 @@ export default function ReportCard({ record, isPending, onEdit, onView }) {
       )}
 
       {/* Header: Số thứ tự + thông tin nhận diện */}
-      <div className="mb-3 flex items-start justify-between">
+      <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-semibold text-foreground">
             {stt ? (
@@ -92,7 +92,7 @@ export default function ReportCard({ record, isPending, onEdit, onView }) {
             ) : null}
             {hoTen_ThuocCtyDonVi || <span className="italic text-muted-foreground">(chưa có tên)</span>}
           </h4>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 min-w-0 truncate text-xs text-muted-foreground">
             {soThe ? `Thẻ: ${soThe}` : ""}
             {soThe && soPhieu ? " · " : ""}
             {soPhieu ? `Phiếu: ${soPhieu}` : ""}
@@ -102,20 +102,20 @@ export default function ReportCard({ record, isPending, onEdit, onView }) {
 
       {/* Thông tin phương tiện / cont / seal */}
       {loaiPhuongTien_BSX_BKSRomooc && (
-        <p className="mb-1 text-xs text-muted-foreground">
+        <p className="mb-1 min-w-0 break-words text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Phương tiện:</span>{" "}
           {loaiPhuongTien_BSX_BKSRomooc}
         </p>
       )}
       {soCont_SoSeal && (
-        <p className="mb-1 text-xs text-muted-foreground">
+        <p className="mb-1 min-w-0 break-words text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Cont/Seal:</span>{" "}
           {soCont_SoSeal}
         </p>
       )}
 
       {/* Xưởng giao → xưởng nhận */}
-      <p className="mb-1 text-xs text-muted-foreground">
+      <p className="mb-1 min-w-0 break-words text-xs text-muted-foreground">
         <span className="font-medium text-foreground">Xưởng:</span>{" "}
         {xuongGiao || <span className="italic">(?)</span>}
         {" → "}
@@ -124,19 +124,19 @@ export default function ReportCard({ record, isPending, onEdit, onView }) {
 
       {/* Chi tiết hàng hóa */}
       {chiTietHangHoa && (
-        <p className="mb-1 line-clamp-2 text-xs text-muted-foreground">
+        <p className="mb-1 min-w-0 line-clamp-2 break-words text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Hàng hóa:</span>{" "}
           {chiTietHangHoa}
         </p>
       )}
 
       {/* Giờ vào / ra */}
-      <div className="mt-2 flex items-center gap-3 border-t border-border pt-2 text-xs">
-        <span>
+      <div className="mt-2 flex min-w-0 items-center gap-3 border-t border-border pt-2 text-xs">
+        <span className="min-w-0 break-words">
           <span className="font-medium text-foreground">Vào:</span>{" "}
           {gioVao || <span className="italic text-destructive">(?)</span>}
         </span>
-        <span>
+        <span className="min-w-0 break-words">
           <span className="font-medium text-foreground">Ra:</span>{" "}
           {gioRa || <span className="italic text-muted-foreground">(chưa có)</span>}
         </span>

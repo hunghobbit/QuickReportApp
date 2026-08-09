@@ -51,7 +51,6 @@ export const RECORD_SCHEMA = {
     soCont_SoSeal: "Số Cont - Số Seal",
   },
   groups: [
-    ["stt"],
     ["hoTen", "thuocCtyDonVi"],
     ["xuongGiao", "xuongNhan"],
     ["soThe", "id"],
@@ -80,7 +79,6 @@ export const RECORD_SCHEMA = {
   // These are the field names accepted by the write-record API.  The form has
   // a few more, smaller fields which are combined into these values below.
   payloadFields: [
-    "stt",
     "hoTen_ThuocCtyDonVi",
     "xuongGiao",
     "xuongNhan",
@@ -95,7 +93,6 @@ export const RECORD_SCHEMA = {
     "ghiChu",
   ],
   formFields: [
-    "stt",
     "hoTen",
     "thuocCtyDonVi",
     "xuongGiao",
@@ -113,17 +110,11 @@ export const RECORD_SCHEMA = {
     "gioRa",
     "ghiChu",
   ],
-  requiredPayloadFields: [
-    "stt",
-    "hoTen_ThuocCtyDonVi",
-    "xuongGiao",
-    "xuongNhan",
-    "soThe",
-    "loaiPhuongTien_BSX_BKSRomooc",
-    "chiTietHangHoa",
-    "soPhieu",
-    "gioVao",
-    "gioRa",
+  requiredInputFields: [
+    "hoTen",
+    "thuocCtyDonVi",
+    "id",
+    "loaiPhuongTien",
   ],
   // Field-name → field-name fallbacks used when resolving a value from a
   // structured object (e.g. parsed JSON).  Each entry lists alternative field
@@ -255,7 +246,10 @@ export const RECORD_SCHEMA = {
     ghiChu: "string",
   },
   validators: {
-    stt: (value) => /^\d+$/.test(sanitizeText(value)),
+    stt: (value) => {
+      const text = sanitizeText(value);
+      return text === "" || /^\d+$/.test(text);
+    },
     gioVao: (value) => Boolean(normalizeTime(value)),
     gioRa: (value) => Boolean(normalizeTime(value)),
   },

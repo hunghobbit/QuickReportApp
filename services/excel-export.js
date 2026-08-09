@@ -89,8 +89,13 @@ function addBorder(worksheet, rowNumber, columns) {
  * Dùng excelColumnMap để map field → cột.
  * Tự động map field name khác nhau giữa record object và excelColumnMap.
  */
-function writeRecordToRow(worksheet, record, rowIndex) {
+function writeRecordToRow(worksheet, record, rowIndex, sequenceNumber) {
   Object.entries(RECORD_SCHEMA.excelColumnMap).forEach(([field, column]) => {
+    if (field === "stt") {
+      worksheet.getCell(rowIndex, column).value = sequenceNumber;
+      return;
+    }
+
     // Map field name nếu cần (vd: excelColumnMap dùng "id" nhưng record dùng "businessId")
     const recordField = FIELD_MAP[field] || field;
     let value = record[recordField];
@@ -198,13 +203,13 @@ export async function exportDayReport(reportDate, exportType = "manual") {
     );
   }
 
-  for (const record of firstSheetData) {
+  for (const [index, record] of firstSheetData.entries()) {
     if (currentRow > ROW_LIMIT) {
       throw new Error(
         `Số lượng báo cáo (${firstSheetData.length}) vượt quá số dòng trống trong template (${ROW_LIMIT - START_ROW + 1}).`,
       );
     }
-    writeRecordToRow(templateWorksheet, record, currentRow);
+    writeRecordToRow(templateWorksheet, record, currentRow, index + 1);
     currentRow++;
   }
 
@@ -225,13 +230,13 @@ export async function exportDayReport(reportDate, exportType = "manual") {
       );
     }
 
-    for (const record of completedReports) {
+    for (const [index, record] of completedReports.entries()) {
       if (currentRow > ROW_LIMIT) {
         throw new Error(
           `Số lượng báo cáo (${completedReports.length}) vượt quá số dòng trống trong sheet "${secondSheetName}".`,
         );
       }
-      writeRecordToRow(secondWorksheet, record, currentRow);
+      writeRecordToRow(secondWorksheet, record, currentRow, index + 1);
       currentRow++;
     }
   }

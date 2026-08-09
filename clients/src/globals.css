@@ -162,4 +162,22 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .report-date-input {
+    color-scheme: light;
+  }
+
+  .report-date-input::-webkit-date-and-time-value,
+  .report-date-input::-webkit-datetime-edit,
+  .report-date-input::-webkit-datetime-edit-fields-wrapper,
+  .report-date-input::-webkit-datetime-edit-text,
+  .report-date-input::-webkit-datetime-edit-month-field,
+  .report-date-input::-webkit-datetime-edit-day-field,
+  .report-date-input::-webkit-datetime-edit-year-field {
+    color: var(--foreground);
+  }
+
+  .report-date-input::-webkit-calendar-picker-indicator {
+    opacity: 0.8;
+  }
 }

@@ -6,71 +6,46 @@ const timePattern = /^(?:[01]?\d|2[0-3])[:.][0-5]\d(?::[0-5]\d)?$/;
 
 // Shared base fields — used by both draft and complete schemas.
 const baseFields = {
-  stt: Joi.string().trim().pattern(/^\d+$/).required().messages({
-    "string.empty": "Số thứ tự là bắt buộc.",
+  stt: Joi.string().trim().pattern(/^\d+$/).optional().allow("").messages({
     "string.pattern.base": "Số thứ tự chỉ được chứa chữ số.",
-    "any.required": "Số thứ tự là bắt buộc.",
   }),
-  hoTen: optionalText,
-  thuocCtyDonVi: optionalText,
-  xuongGiao: requiredText.messages({
-    "string.empty": "Xưởng xuất là bắt buộc.",
+  hoTen: requiredText.messages({
+    "string.empty": "Họ tên là bắt buộc.",
   }),
-  xuongNhan: requiredText.messages({
-    "string.empty": "Xưởng nhập là bắt buộc.",
+  thuocCtyDonVi: requiredText.messages({
+    "string.empty": "Tên đơn vị là bắt buộc.",
   }),
-  soThe: requiredText.messages({ "string.empty": "Số thẻ là bắt buộc." }),
-  id: optionalText,
-  loaiPhuongTien: optionalText,
+  xuongGiao: optionalText,
+  xuongNhan: optionalText,
+  soThe: optionalText,
+  id: requiredText.messages({
+    "string.empty": "Giấy tờ là bắt buộc.",
+  }),
+  loaiPhuongTien: requiredText.messages({
+    "string.empty": "Phương tiện là bắt buộc.",
+  }),
   bks: optionalText,
   bksRomooc: optionalText,
   soCont: optionalText,
   soSeal: optionalText,
-  chiTietHangHoa: requiredText.messages({
-    "string.empty": "Chi tiết hàng hóa là bắt buộc.",
-  }),
-  soPhieu: requiredText.messages({
-    "string.empty": "Số phiếu là bắt buộc.",
-  }),
-  gioVao: Joi.string().trim().pattern(timePattern).required().messages({
-    "string.empty": "Giờ vào là bắt buộc.",
+  chiTietHangHoa: optionalText,
+  soPhieu: optionalText,
+  gioVao: Joi.string().trim().pattern(timePattern).optional().allow("").messages({
     "string.pattern.base": "Giờ vào phải theo định dạng HH:mm.",
   }),
-  gioRa: Joi.string().trim().pattern(timePattern).messages({
-    "string.empty": "Giờ ra là bắt buộc.",
+  gioRa: Joi.string().trim().pattern(timePattern).optional().allow("").messages({
     "string.pattern.base": "Giờ ra phải theo định dạng HH:mm.",
   }),
   ghiChu: optionalText,
 };
 
-// Draft schema: gioRa is optional (status will be "pending").
 export const reportDraftFormSchema = Joi.object({
   ...baseFields,
-  gioRa: Joi.string().trim().pattern(timePattern).optional().allow("").messages({
-    "string.pattern.base": "Giờ ra phải theo định dạng HH:mm.",
-  }),
-})
-  .or("hoTen", "thuocCtyDonVi")
-  .or("loaiPhuongTien", "bks", "bksRomooc")
-  .messages({
-    "object.missing":
-      "Điền họ tên hoặc đơn vị, và thông tin phương tiện hoặc biển số xe.",
-  });
+});
 
-// Complete schema: gioRa is required (status will be "completed").
 export const reportCompleteFormSchema = Joi.object({
   ...baseFields,
-  gioRa: Joi.string().trim().pattern(timePattern).required().messages({
-    "string.empty": "Giờ ra là bắt buộc.",
-    "string.pattern.base": "Giờ ra phải theo định dạng HH:mm.",
-  }),
-})
-  .or("hoTen", "thuocCtyDonVi")
-  .or("loaiPhuongTien", "bks", "bksRomooc")
-  .messages({
-    "object.missing":
-      "Điền họ tên hoặc đơn vị, và thông tin phương tiện hoặc biển số xe.",
-  });
+});
 
 // Backwards-compatible alias for the complete schema.
 export const reportFormSchema = reportCompleteFormSchema;

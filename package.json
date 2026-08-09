@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nodemon",
-    "start": "nodemon",
+    "dev": "node --env-file=.env ./node_modules/nodemon/bin/nodemon.js app.js",
+    "start": "node --env-file=.env ./node_modules/nodemon/bin/nodemon.js app.js",
     "test": "vitest run",
     "migrate": "node database/migrate.js"
   },
@@ -14,8 +14,9 @@
   "author": "hunghobbit",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^2.13.0",
     "@prisma/adapter-pg": "^7.9.0",
-    "@prisma/client": "^7.9.0",
+    "@prisma/client": "^7.9.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -24,12 +25,13 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "pg": "^8.22.0",
-    "sql.js": "^1.10.3"
+    "sql.js": "^1.10.3",
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "morgan": "^1.11.0",
     "nodemon": "^3.1.14",
-    "prisma": "^7.9.0",
+    "prisma": "^7.9.1",
     "vitest": "^4.1.10"
   },
   "nodemonConfig": {

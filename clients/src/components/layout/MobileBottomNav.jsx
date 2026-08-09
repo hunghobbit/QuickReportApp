@@ -1,7 +1,7 @@
 "use client"
 
 import { Home, User, Plus } from "lucide-react"
-import { openReportChat } from "@/components/report/ReportChat"
+import { openAIReportGenerator } from "@/components/ai/AIReportGenerator"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function MobileBottomNav() {
@@ -33,7 +33,7 @@ export function MobileBottomNav() {
         {/* Floating action button, centered on the bar */}
         <button
           type="button"
-          onClick={openReportChat}
+          onClick={openAIReportGenerator}
           aria-label="Tạo báo cáo mới"
           className="absolute left-1/2 top-0 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-crimson text-crimson-foreground shadow-lg shadow-crimson/30 ring-4 ring-background transition-transform active:scale-95"
         >

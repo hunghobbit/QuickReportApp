@@ -104,16 +104,11 @@ describe("isReportCompleted / isReportPending", () => {
 // ─── validateRecordPayload (two-mode validation) ──────────────────
 
 const validBase = {
-  stt: "001",
   hoTen: "Nguyễn Văn A",
   thuocCtyDonVi: "Công ty ABC",
-  xuongGiao: "Xưởng Giao",
-  xuongNhan: "Xưởng Nhận",
-  soThe: "123456",
+  id: "CCCD 123456789",
   loaiPhuongTien: "Xe tải",
-  chiTietHangHoa: "5 thùng thép",
-  soPhieu: "BPM001",
-  gioVao: "07:05",
+  xuongGiao: "Xưởng Giao",
   gioRa: "08:30",
 };
 
@@ -134,25 +129,24 @@ describe("validateRecordPayload — draft mode", () => {
     expect(result.status).toBe(REPORT_STATUS.COMPLETED);
   });
 
-  it("rejects missing required field (stt)", () => {
+  it("rejects missing required field (hoTen)", () => {
     const result = validateRecordPayload(
-      { ...validBase, stt: "" },
+      { ...validBase, hoTen: "" },
       "draft",
     );
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("stt");
+    expect(result.error).toContain("hoTen");
   });
 
-  it("rejects missing required field (gioVao)", () => {
+  it("accepts missing gioVao because it is optional", () => {
     const result = validateRecordPayload(
       { ...validBase, gioVao: "" },
       "draft",
     );
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("gioVao");
+    expect(result.ok).toBe(true);
   });
 
-  it("rejects non-numeric stt", () => {
+  it("rejects non-numeric stt when it is provided", () => {
     const result = validateRecordPayload(
       { ...validBase, stt: "abc" },
       "draft",
@@ -170,7 +164,7 @@ describe("validateRecordPayload — complete mode (default)", () => {
     expect(result.record.gioRa).toBe("08:30");
   });
 
-  it("rejects a record with empty gioRa", () => {
+  it("rejects a record with empty gioRa in complete mode", () => {
     const result = validateRecordPayload({ ...validBase, gioRa: "" });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("gioRa");
@@ -182,10 +176,10 @@ describe("validateRecordPayload — complete mode (default)", () => {
     expect(result.error).toContain("gioRa");
   });
 
-  it("rejects missing required field (soThe)", () => {
-    const result = validateRecordPayload({ ...validBase, soThe: "" });
+  it("rejects missing required field (id)", () => {
+    const result = validateRecordPayload({ ...validBase, id: "" });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("soThe");
+    expect(result.error).toContain("id");
   });
 });
 

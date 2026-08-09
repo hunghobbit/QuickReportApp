@@ -1,129 +1,110 @@
-# QuickReportApp — Bối cảnh dự án
+# QuickReportApp — Project Context
+
+> Cập nhật lần cuối: 2026-08-08
+> Trạng thái: đang phát triển và hoạt động theo luồng báo cáo thực tế
 
 ## Mục tiêu
 
-QuickReportApp giúp nhân viên bảo vệ chuyển nội dung báo cáo logistics thô (ví dụ sao chép từ Zalo) thành báo cáo chuẩn và file Excel cuối ngày.
+QuickReportApp giúp người dùng chuyển báo cáo logistics thô (từ ảnh, văn bản hoặc dữ liệu nhập tay) thành báo cáo có cấu trúc, lưu vào database và xuất Excel khi cần.
 
-Luồng mục tiêu mới:
-
-```text
-Chọn ngày báo cáo
-  → dán/gõ báo cáo thô
-  → quét văn bản
-  → xác nhận/chỉnh sửa trên modal
-  → lưu báo cáo
-  → theo dõi tại hai tab Đã ra xưởng / Chưa ra xưởng
-  → xuất Excel khi cần hoặc tự động lúc 00:00 ngày hôm sau
-```
-
-## Quy tắc nghiệp vụ đã chốt
-
-- `reportDate` là ngày do người dùng chọn lúc tạo báo cáo; không lấy lại ngày hệ thống khi xuất Excel.
-- Khi nhấn **Thêm/Lưu**:
-  - `gioRa` trống → trạng thái `pending`, hiển thị tại tab **Chưa ra xưởng**.
-  - `gioRa` hợp lệ → trạng thái `completed`, hiển thị tại tab **Đã ra xưởng**.
-- Báo cáo `pending` được phép thiếu một số thông tin để có thể bổ sung sau.
-- Báo cáo chỉ được coi là hoàn tất khi đạt bộ điều kiện kiểm tra cho trạng thái `completed`.
-- Chỉnh sửa báo cáo `pending` và điền `gioRa` hợp lệ sẽ tự chuyển báo cáo sang **Đã ra xưởng**.
-- Excel xuất theo ngày đang chọn, tên file: `Báo cáo ddMMyyyyHHmmss.xlsx`.
-- File xuất gồm tất cả báo cáo của ngày đó; bố trí hai worksheet: **Chưa ra xưởng** (pending) và **Đã ra xưởng** (completed).
-- Thống nhất dùng thuật ngữ **xưởng** trên toàn bộ giao diện, không dùng lẫn với “cổng”.
-
-## Hiện trạng mã nguồn
-
-Repository có hai frontend song song:
-
-1. `public/` + `app.js`: frontend vanilla JavaScript cũ, Express phục vụ trực tiếp.
-2. `clients/`: React + Vite + Tailwind, là frontend cần được chọn làm bản chính.
-
-Không phát triển thêm đồng thời hai frontend. Khi React đạt đủ luồng mới, cần ngừng/loại bỏ frontend legacy để tránh parser, form và API bị sai lệch.
-
-Những phần đang có:
-
-- `configs/record-schema.js`: nguồn dữ liệu chung cho tên trường, nhãn, alias, chuẩn hóa và mapping Excel. Phải tiếp tục là nguồn duy nhất.
-- Parser React đã có thể quét văn bản và mở form đã điền sẵn.
-- `ReportFormModal.jsx` hiện vẫn gửi yêu cầu tạo/tải Excel ngay sau khi submit. Đây là luồng cũ, cần đổi thành lưu báo cáo.
-- `storage/data/quick-report.db` đã tồn tại nhưng cần lớp truy cập SQLite, migration và schema bảng chính thức.
-- `services/excel-export.js` chưa hoàn thiện; chỉ triển khai sau khi dữ liệu đã được lưu và có thể đọc theo ngày.
-
-## Kiến trúc theo giai đoạn
-
-### Giai đoạn 1 — Chạy trên một máy
+Luồng hiện tại:
 
 ```text
-React frontend → Express API → SQLite
-                           └→ dịch vụ tạo Excel → thư mục exports/
+Đăng nhập
+  → tạo hoặc chỉnh sửa báo cáo
+  → có thể dùng AI để đọc ảnh và đề xuất dữ liệu
+  → lưu báo cáo với trạng thái pending/completed
+  → xem theo ngày và theo tab trạng thái
+  → xuất Excel theo ngày
 ```
 
-- SQLite là nơi lưu bền vững các báo cáo.
-- Máy vận hành có thể xuất thủ công.
-- Nếu làm tự động trong giai đoạn này, app phải có cơ chế xuất bù khi máy không hoạt động tại 00:00.
+## Quy tắc nghiệp vụ hiện tại
 
-### Giai đoạn 2 — Cloud nhẹ
+- `reportDate` là ngày do người dùng chọn khi tạo báo cáo.
+- Nếu `gioRa` trống hoặc không hợp lệ thì báo cáo ở trạng thái `pending`.
+- Nếu `gioRa` hợp lệ thì báo cáo ở trạng thái `completed`.
+- Báo cáo pending có thể được bổ sung sau.
+- Khi chỉnh sửa báo cáo và điền `gioRa` hợp lệ, trạng thái sẽ tự chuyển sang completed.
+- Export Excel dùng dữ liệu đã lưu trong database, không phụ thuộc vào dữ liệu đang mở trong modal.
+- Hệ thống có auto-fill xưởng theo team của người dùng:
+  - import → `xuongNhan`
+  - export → `xuongGiao`
+
+## Kiến trúc hiện tại
 
 ```text
-Frontend → Backend trên Render → Supabase PostgreSQL
-                        └──────→ Supabase Storage (file Excel)
-
-Render Cron Job (00:00 Asia/Ho_Chi_Minh) → tác vụ xuất Excel
+React frontend (clients/) → Express API (app.js) → PostgreSQL via Prisma
+                                             └→ Excel export service
+                                             └→ AI generation service (Gemini/OpenRouter)
 ```
 
-- Không đưa file SQLite trực tiếp lên cloud để nhiều máy cùng dùng.
-- Thiết kế Repository từ đầu để có thể thay SQLite bằng Supabase PostgreSQL mà không ảnh hưởng UI và nghiệp vụ.
-- Render Cron Job phải chống chạy trùng; bảng lịch sử xuất là bắt buộc.
-- Khi vận hành thật, ưu tiên gói Supabase không tự pause để tác vụ đêm đáng tin cậy.
+## Thành phần chính
 
-## Module cần triển khai theo ưu tiên
+- Frontend: React 19 + Vite 8 + Tailwind CSS
+- Backend: Node.js + Express
+- Database: PostgreSQL + Prisma
+- Excel: ExcelJS
+- Auth: JWT + bcryptjs
+- AI: Gemini/OpenRouter multimodal generation
 
-1. `report-status`: quy tắc phân loại `pending`/`completed` dựa trên giờ ra hợp lệ.
-2. `report-validation`: hai mức kiểm tra, lưu tạm và hoàn tất.
-3. Persistence: migration, schema và `sqlite-report-repository`.
-4. `report-service` và API tạo, lấy theo ngày, sửa, lấy chi tiết báo cáo.
-5. State ngày báo cáo trên frontend. ✅ — P4
-6. Sửa `ReportFormModal`: đổi **Xuất Excel** thành **Thêm/Lưu**, gọi API lưu dữ liệu. ✅ — P4
-7. `ReportTabs`, `ReportCard` và luồng chỉnh sửa/chuyển trạng thái.
-8. `excel-export`: tạo một workbook từ toàn bộ báo cáo của một ngày.
-9. `export-run-service` và bảng `export_runs` để theo dõi/chống xuất trùng.
-10. Adapter Supabase, Supabase Storage và Render Cron Job.
-11. Cấu hình môi trường, logging và test.
+## Trạng thái mã nguồn
 
-## Cấu trúc module đề xuất
+Các module chính hiện đã được kết nối và hoạt động trong luồng hiện tại:
+
+- [configs/record-schema.js](../configs/record-schema.js): schema chung cho field names, labels, aliases và mapping Excel.
+- [services/report-service.js](../services/report-service.js): tạo, lấy, cập nhật và phân loại báo cáo.
+- [services/excel-export.js](../services/excel-export.js): tạo workbook Excel và ghi lịch sử export.
+- [services/auth-service.js](../services/auth-service.js): login và xác thực người dùng.
+- [server/ai/ai.service.js](../server/ai/ai.service.js): gọi AI để sinh dữ liệu báo cáo từ ảnh hoặc văn bản.
+- [clients/src/components/ai/AIReportGenerator.jsx](../clients/src/components/ai/AIReportGenerator.jsx): luồng AI trên frontend.
+
+## Tình trạng triển khai
+
+### Hoàn thành
+
+- Prisma schema cho User, Report, ExportRun
+- CRUD báo cáo và trạng thái pending/completed
+- Export Excel theo ngày
+- Lịch sử export và chống trùng cho export tự động
+- Luồng AI tạo báo cáo từ ảnh
+- UI báo cáo và modal chỉnh sửa
+
+### Còn cần làm tiếp
+
+- Hoàn thiện test end-to-end cho các luồng chính
+- Tăng cường logging và error handling production
+- Chuẩn hóa deployment và environment variables cho môi trường thật
+- Có thể thêm scheduler/cron nếu cần export tự động ở môi trường deploy
+
+## Nguyên tắc phát triển
+
+- Không tạo schema riêng ở nhiều chỗ; dùng chung file cấu hình và schema.
+- Logic nghiệp vụ nên nằm ở service layer, không nên lẫn trong UI.
+- API nên đọc dữ liệu từ database thay vì phụ thuộc vào state frontend.
+- AI chỉ nên đóng vai trò đề xuất; người dùng vẫn review và lưu lại kết quả.
+
+## API chính
+
+- POST /api/auth/login
+- GET /api/auth/me
+- GET /api/users
+- POST /api/reports
+- GET /api/reports
+- GET /api/reports/:id
+- PUT /api/reports/:id
+- GET /api/reports/export/:date
+- GET /api/reports/export/history
+
+## AI workflow
 
 ```text
-services/
-  report-service.js
-  report-status.js
-  report-validation.js
-  report-repository.js
-  excel-export.js
-  export-run-service.js
-  storage-service.js
-
-database/
-  migrations/
-  sqlite-report-repository.js
-  supabase-report-repository.js
-
-clients/src/features/report/
-  report-api.js
-  report-store.js
-  report-status.js
-
-clients/src/components/report/
-  ReportDatePicker.jsx
-  ReportTabs.jsx
-  ReportCard.jsx
+Người dùng chụp ảnh hoặc cung cấp text
+  → backend gọi AI service
+  → parser ánh xạ kết quả về record schema
+  → người dùng xem và chỉnh sửa trước khi lưu
 ```
 
-## Nguyên tắc kỹ thuật
+## Ghi chú
 
-- Không nhân bản parser, nhãn hoặc schema ở nhiều nơi.
-- Không hard-code API URL hoặc khóa dịch vụ; dùng biến môi trường.
-- UI không chứa logic nghiệp vụ; phân loại/validation nằm ở `services/` và schema dùng chung.
-- API xuất Excel phải đọc dữ liệu đã lưu, không nhận một báo cáo đơn lẻ rồi lập tức tải file.
-- Tác vụ tự động phải idempotent: chạy lại không tạo thêm file tự động cho cùng ngày nếu đã thành công.
+Tài liệu này đã được điều chỉnh để phản ánh kiến trúc hiện tại thay vì các kế hoạch cũ về SQLite, Telegram bot riêng hoặc phase P8 cũ.
 
-## Nguyên Tắc khi codex đọc file:
-
-- Đọc và chạy file 'tree.ps1' để lấy câu trúc thư mục.
-- Lưu lại và ghi nhớ cho lần sau

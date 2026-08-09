@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import * as ReportEls from "@/components/report"
+import AIReportGenerator from "@/components/ai/AIReportGenerator";
 
 import "./index.css";
 import { DesktopTopNav } from "./components/layout/DesktopTopNav";
@@ -78,13 +79,22 @@ function AppContent() {
       </main>
 
       <MobileBottomNav />
-      <ReportEls.ReportChat />
+      <AIReportGenerator />
     </div>
   );
 }
 
 const App = () => {
   const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    document.documentElement.classList.add("light");
+    document.documentElement.classList.remove("dark");
+
+    return () => {
+      document.documentElement.classList.remove("light");
+    };
+  }, []);
 
   // Nếu chưa đăng nhập → hiển thị trang đăng nhập
   if (!isAuthenticated) {

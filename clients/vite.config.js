@@ -19,7 +19,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3001,
-    proxy: ENV_NODE === "development" ? devProxy : prodProxy
+    proxy: ENV_NODE === "development" ? devProxy : prodProxy,
+    allowedHosts: ["7572-113-185-80-37.ngrok-free.app"]
   },
   resolve : {
     alias: {

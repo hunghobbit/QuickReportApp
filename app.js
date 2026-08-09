@@ -1,6 +1,11 @@
+import path from "node:path";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+
+dotenv.config(".env");
+
 import {
   createReport,
   getReportsByDate,
@@ -12,6 +17,25 @@ import * as exportRunRepo from "./database/prisma-export-run-repository.js";
 import { login, verifyToken, getUsers } from "./services/auth-service.js";
 import { requireAuth, optionalAuth } from "./middleware/auth.js";
 import { getPrisma, disconnectPrisma } from "./database/prisma-client.js";
+import { generateReport, generateReportFromImages, isAIConfigured } from "./server/ai/index.js";
+import multer from "multer";
+
+
+// Configure multer for image uploads (max 10 images, 10MB each)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB per file
+    files: 10, // max 10 files
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed."), false);
+    }
+  },
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -248,6 +272,110 @@ app.get("/api/reports/export/history", async (req, res) => {
       .status(500)
       .json({ success: false, message: error.message || "Failed to fetch export history." });
   }
+});
+
+// ─── API AI Report Generator ─────────────────────────────────────
+// POST /api/ai/generate-report
+// Body: { userInput: { companyName, transportCompany }, ocr: { idCard, licensePlate, container, seal, invoice, goods } }
+// Response: { success, data: { report, fields, found, missing, warnings } }
+app.post("/api/ai/generate-report", optionalAuth, async (req, res) => {
+  try {
+    // Check if AI is configured
+    if (!isAIConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "AI service is not configured. Add GEMINI_API_KEY or OPENROUTER_API_KEY in the .env file.",
+      });
+    }
+
+    const { userInput, ocr } = req.body || {};
+
+    if (!ocr && !userInput) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must contain 'userInput' and/or 'ocr' fields.",
+      });
+    }
+
+    const result = await generateReport({ userInput, ocr });
+    if (!result.success) {
+      return res
+        .status(result.statusCode || 500)
+        .json({ success: false, message: result.error });
+    }
+
+    return res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    console.error("[POST /api/ai/generate-report] Server error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: error.message || "Failed to generate AI report." });
+  }
+});
+
+// ─── API AI Report Generator from Images (Multimodal) ───────────────
+// POST /api/ai/generate-report-from-images
+// Body: multipart/form-data with images[] (image files) + companyName + transportCompany
+// Response: { success, data: { report, fields, found, missing, warnings, record } }
+app.post("/api/ai/generate-report-from-images", optionalAuth, upload.array("images", 10), async (req, res) => {
+  try {
+    if (!isAIConfigured()) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "AI service is not configured. Add GEMINI_API_KEY or OPENROUTER_API_KEY in the .env file.",
+      });
+    }
+
+    const files = req.files || [];
+    if (files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one image is required.",
+      });
+    }
+
+    // Convert files to base64
+    const images = files.map((file) => ({
+      data: file.buffer.toString("base64"),
+      mimeType: file.mimetype,
+    }));
+
+    const userInput = {
+      reportType: req.body.reportType || "",
+      team: req.user?.team || req.body.team || "",
+      companyName: req.body.companyName || "",
+      transportCompany: req.body.transportCompany || "",
+      xuongGiao: req.body.xuongGiao || "",
+      xuongNhan: req.body.xuongNhan || "",
+      goodsDetails: req.body.goodsDetails || "",
+      reason: req.body.reason || "",
+    };
+
+    const result = await generateReportFromImages({ userInput, images });
+    if (!result.success) {
+      return res
+        .status(result.statusCode || 500)
+        .json({ success: false, message: result.error });
+    }
+
+    return res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    console.error("[POST /api/ai/generate-report-from-images] Server error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to generate AI report from images.",
+    });
+  }
+});
+
+// GET /api/ai/status — Check if AI service is configured
+app.get("/api/ai/status", (req, res) => {
+  return res.status(200).json({
+    success: true,
+    data: { configured: isAIConfigured() },
+  });
 });
 
 // ─── Khởi động server ─────────────────────────────────────────────
