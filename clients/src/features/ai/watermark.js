@@ -158,10 +158,42 @@ export async function applyWatermark({
  * @returns {Promise<{ dataUrl: string, mimeType: string }>}
  */
 export async function captureFromVideo({ video, lines = [], mimeType = "image/jpeg" }) {
+  if (!video) {
+    throw new Error("Video chưa sẵn sàng.");
+  }
+
+  if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+    await new Promise((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        cleanup();
+        reject(new Error("Camera chưa sẵn sàng, vui lòng thử lại."));
+      }, 2500);
+
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+
+      function cleanup() {
+        window.clearTimeout(timeoutId);
+        video.removeEventListener("loadeddata", onReady);
+        video.removeEventListener("canplay", onReady);
+      }
+
+      video.addEventListener("loadeddata", onReady, { once: true });
+      video.addEventListener("canplay", onReady, { once: true });
+    });
+  }
+
+  const width = video.videoWidth || Math.round(video.clientWidth) || 1280;
+  const height = video.videoHeight || Math.round(video.clientHeight) || 720;
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Không thể khởi tạo canvas để chụp ảnh.");
+  }
 
   // Vẽ frame hiện tại từ video
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);

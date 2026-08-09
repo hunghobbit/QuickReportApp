@@ -31,6 +31,22 @@ export default function CameraCapture({ onCapture, onClose }) {
 
   const companyName = user?.name || "";
 
+  const bindStreamToVideo = useCallback(async () => {
+    const stream = streamRef.current;
+    const video = videoRef.current;
+    if (!stream || !video) return;
+
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+
+    try {
+      await video.play();
+    } catch {
+      // Một số trình duyệt mobile có thể throw tạm thời khi vừa mount video.
+    }
+  }, []);
+
   // Lấy GPS khi mở component (không bắt buộc)
   useEffect(() => {
     let cancelled = false;
@@ -54,16 +70,17 @@ export default function CameraCapture({ onCapture, onClose }) {
   const startCamera = useCallback(async () => {
     setCameraError("");
     try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
       // Ưu tiên camera sau (environment) cho chụp tài liệu/biển số
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
+
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
       setCameraActive(true);
     } catch (err) {
       setCameraError(
@@ -72,6 +89,11 @@ export default function CameraCapture({ onCapture, onClose }) {
       setCameraActive(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!cameraActive) return;
+    void bindStreamToVideo();
+  }, [cameraActive, bindStreamToVideo]);
 
   // Dừng camera khi unmount
   useEffect(() => {
@@ -241,7 +263,9 @@ export default function CameraCapture({ onCapture, onClose }) {
           <div className="relative overflow-hidden rounded-xl border border-border bg-black">
             <video
               ref={videoRef}
+              autoPlay
               playsInline
+              webkit-playsinline="true"
               muted
               className="aspect-[4/3] w-full object-cover"
             />

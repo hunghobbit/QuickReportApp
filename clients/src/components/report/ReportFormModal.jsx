@@ -179,28 +179,48 @@ export default function ReportFormModal({ editRecord, onSaved, onClose }) {
     setIsCameraActive(false);
   }, []);
 
+  const bindStreamToVideo = useCallback(async () => {
+    const stream = streamRef.current;
+    const video = videoRef.current;
+    if (!stream || !video) return;
+
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+
+    try {
+      await video.play();
+    } catch {
+      // Mobile browser có thể từ chối play tạm thời ngay sau khi mount.
+    }
+  }, []);
+
   const startCamera = useCallback(async () => {
     if (!editRecord) return;
 
     setCameraError("");
     try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
 
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
       setIsCameraActive(true);
     } catch {
       setCameraError("Không thể truy cập camera. Bạn vẫn có thể thêm ảnh từ thư viện.");
       setIsCameraActive(false);
     }
   }, [editRecord]);
+
+  useEffect(() => {
+    if (!isCameraActive) return;
+    void bindStreamToVideo();
+  }, [isCameraActive, bindStreamToVideo]);
 
   // Reset form mỗi khi modal mở
   useEffect(() => {
@@ -565,7 +585,9 @@ export default function ReportFormModal({ editRecord, onSaved, onClose }) {
                   <div className="relative overflow-hidden rounded-xl border border-border bg-black">
                     <video
                       ref={videoRef}
+                      autoPlay
                       playsInline
+                      webkit-playsinline="true"
                       muted
                       className="aspect-[4/3] w-full object-cover"
                     />
